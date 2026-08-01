@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Seafoam 文创工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7FDBCA">
+<meta name="theme-color" content="#8FE3D0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,30 +17,30 @@
 <link rel="icon" type="image/png" href="favicon-32.png">
 <style>
 :root{
-  --seafoam:#7FDBCA;--seafoam-light:#B8E8DE;--seafoam-deep:#5BB8A5;
-  --cream:#FFF8E7;--cream-deep:#F5EAD3;
-  --blush:#FFD6E0;--blush-deep:#FF9EB5;
-  --sky:#C8E6F5;--sky-deep:#8EC9E8;
-  --yellow:#FFF0B8;--yellow-deep:#FFD93D;
-  --peach:#FFE0CC;--lavender:#E0D4F0;--lavender-deep:#B8A0D8;
-  --brown:#6B5849;--brown-soft:#8B7B6B;--brown-light:#B8A595;
-  --white:#FFFDF8;
-  --shadow:0 4px 16px rgba(91,184,165,.15);--shadow-sm:0 2px 8px rgba(91,184,165,.1);
-  --radius:18px;--radius-sm:12px;
+  --seafoam:#8FE3D0;--seafoam-light:#C7F0E8;--seafoam-deep:#5FCBB6;
+  --cream:#FFF6F3;--cream-deep:#FBEDE6;
+  --blush:#FFD6E8;--blush-deep:#FF9EC4;
+  --sky:#CFE9F7;--sky-deep:#8FC9EC;
+  --yellow:#FFF3C4;--yellow-deep:#FFD95E;
+  --peach:#FFE3D3;--lavender:#E6DBF5;--lavender-deep:#BCA6E0;
+  --brown:#7A6A5E;--brown-soft:#9B8B7E;--brown-light:#C2B3A6;
+  --white:#FFFBF7;
+  --shadow:0 6px 22px rgba(255,158,196,.20);--shadow-sm:0 3px 12px rgba(255,158,196,.14);
+  --radius:22px;--radius-sm:16px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--brown);font-size:14px;line-height:1.5;padding-bottom:80px;overflow-x:hidden}
+body{font-family:"Quicksand","PingFang SC","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--brown);font-size:14px;line-height:1.6;padding-bottom:80px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 img{display:block;max-width:100%}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit;font-size:14px;color:var(--brown);outline:none}
 input::placeholder,textarea::placeholder{color:var(--brown-light)}
-.header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--seafoam-light) 0%,var(--seafoam) 50%,var(--seafoam-deep) 100%);padding:14px 16px 12px;box-shadow:0 2px 12px rgba(91,184,165,.25);display:flex;align-items:center;justify-content:space-between}
+.header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--seafoam-light) 0%,var(--blush) 48%,var(--lavender) 100%);padding:16px 18px 14px;border-radius:0 0 26px 26px;box-shadow:0 4px 16px rgba(255,158,196,.22);display:flex;align-items:center;justify-content:space-between}
 .header h1{font-size:18px;color:#fff;display:flex;align-items:center;gap:8px;text-shadow:0 1px 4px rgba(0,0,0,.1)}
 .header .date{font-size:11px;color:rgba(255,255,255,.8)}
-.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--white);display:flex;box-shadow:0 -2px 16px rgba(91,184,165,.12);border-top:2px solid var(--seafoam-light);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--white);display:flex;box-shadow:0 -4px 18px rgba(255,158,196,.16);border-top:2px solid var(--blush);border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom)}
 .tabbar button{flex:1;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--brown-light);transition:.2s}
-.tabbar button.active{color:var(--seafoam-deep)}
+.tabbar button.active{color:var(--blush-deep)}
 .tabbar button .ico{font-size:20px;line-height:1}
 .page{display:none;padding:12px 14px 20px;animation:fade .3s}
 .page.active{display:block}
@@ -267,6 +270,58 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 
 /* ===== 趋势图 ===== */
 #trendCanvas{width:100%;height:120px;display:block}
+/* ===== 马卡龙微交互 & 装饰动画 ===== */
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+
+.card{transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease}
+.card:active{transform:scale(.985)}
+.card:hover{box-shadow:var(--shadow)}
+
+.btn,.btn-primary{transition:transform .15s ease,box-shadow .15s ease}
+.btn:active,.btn-primary:active{transform:scale(.95)}
+
+.tabbar button.active .ico{display:inline-block;animation:wiggle .5s ease}
+
+.empty .emoji{font-size:56px;opacity:1;animation:bob 3s ease-in-out infinite}
+
+.deco{position:fixed;z-index:1;pointer-events:none;opacity:.5;animation:bob 6s ease-in-out infinite}
+.deco-1{animation-duration:7s}
+.deco-2{animation-duration:5.5s;animation-delay:.8s}
+
+.header h1 svg{animation:bob 4s ease-in-out infinite}
+
+/* ===== 首页 Bento 布局 ===== */
+.bento-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.span-2{grid-column:1/-1}
+.bent{background:var(--white);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease}
+.bent:active{transform:scale(.97)}
+.bent:hover{box-shadow:var(--shadow)}
+.bent .bl{font-size:12px;color:var(--brown-soft);font-weight:600;margin-bottom:3px}
+.bent .bv{font-family:"Quicksand",sans-serif;font-size:22px;font-weight:700;color:var(--brown);line-height:1.2}
+.bent .bs{font-size:11px;color:var(--brown-light);margin-top:2px}
+.bent-seafoam{background:linear-gradient(135deg,#EAFBF6,var(--seafoam-light))}
+.bent-pink{background:linear-gradient(135deg,#FFF0F6,var(--blush))}
+.bent-yellow{background:linear-gradient(135deg,#FFFCEB,var(--yellow))}
+.bent-peach{background:linear-gradient(135deg,#FFF4EE,var(--peach))}
+.bent-lavender{background:linear-gradient(135deg,#F6F1FB,var(--lavender))}
+.bent-sky{background:linear-gradient(135deg,#F0F8FE,var(--sky))}
+.greeting-card{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--seafoam-light) 0%,var(--blush) 55%,var(--lavender) 100%);border:none;color:var(--brown);padding:18px 20px}
+.greeting-card .greeting-left{display:flex;flex-direction:column;gap:3px}
+.greeting-date{font-size:12px;font-weight:600;opacity:.75}
+.greeting-slogan{font-size:18px;font-weight:700;letter-spacing:.3px}
+.greeting-right{text-align:right}
+.greeting-rev-label{font-size:12px;font-weight:600;opacity:.75}
+.greeting-rev{font-family:"Quicksand",sans-serif;font-size:30px;font-weight:700;color:var(--blush-deep)}
+.greeting-bear{position:absolute;right:14px;top:-8px;font-size:34px;opacity:.85;animation:bob 3.5s ease-in-out infinite}
+.rate-card{grid-column:1/-1;display:flex;align-items:center;gap:16px}
+.rate-left{flex:1}
+.rate-sub{font-size:12px;color:var(--brown-soft);margin-top:4px}
+.ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg);width:72px;height:72px}
+.ring-bg{fill:none;stroke:var(--cream-deep);stroke-width:6}
+.ring-fg{fill:none;stroke:var(--blush-deep);stroke-width:6;stroke-linecap:round;stroke-dasharray:175.9;stroke-dashoffset:175.9;transition:stroke-dashoffset .8s ease}
+.ring-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:"Quicksand",sans-serif;font-size:17px;font-weight:700;color:var(--brown)}
 </style>
 </head>
 <body>
@@ -309,16 +364,16 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 <header class="header">
   <h1>
     <svg viewBox="0 0 100 100" width="32" height="32" style="flex-shrink:0">
-      <ellipse cx="35" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#5BB8A5" stroke-width="2.5"/>
-      <ellipse cx="65" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#5BB8A5" stroke-width="2.5"/>
+      <ellipse cx="35" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#5FCBB6" stroke-width="2.5"/>
+      <ellipse cx="65" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#5FCBB6" stroke-width="2.5"/>
       <ellipse cx="35" cy="22" rx="5" ry="7" fill="#FFD6E0"/>
       <ellipse cx="65" cy="22" rx="5" ry="7" fill="#FFD6E0"/>
-      <circle cx="50" cy="55" r="30" fill="#FFF8E7" stroke="#5BB8A5" stroke-width="2.5"/>
+      <circle cx="50" cy="55" r="30" fill="#FFF8E7" stroke="#5FCBB6" stroke-width="2.5"/>
       <ellipse cx="32" cy="60" rx="7" ry="5" fill="#FFD6E0" opacity="0.8"/>
       <ellipse cx="68" cy="60" rx="7" ry="5" fill="#FFD6E0" opacity="0.8"/>
       <circle cx="42" cy="50" r="3" fill="#4A3C2E"/>
       <circle cx="58" cy="50" r="3" fill="#4A3C2E"/>
-      <path d="M 44 63 Q 50 68 56 63" stroke="#5BB8A5" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M 44 63 Q 50 68 56 63" stroke="#5FCBB6" stroke-width="2" fill="none" stroke-linecap="round"/>
     </svg>
     Seafoam
   </h1>
@@ -327,61 +382,71 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 
 <!-- ====== 首页：经营驾驶舱 ====== -->
 <div class="page active" id="page-home">
-  <div class="stat-grid">
-    <div class="stat-box seafoam" onclick="goPage('products')">
-      <div class="label">产品种类</div>
-      <div class="num" id="dashProductCount">0</div>
-      <div class="sub" id="dashTotalStock">总库存 0</div>
-    </div>
-    <div class="stat-box pink" onclick="goPage('more');setTimeout(function(){switchMoreTab('commission')},100)">
-      <div class="label">约稿成本</div>
-      <div class="num" id="dashCommCost" style="font-size:18px">¥0</div>
-      <div class="sub" id="dashCommCount">0 笔约稿</div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">📊 今日实时</div>
-    <div class="stat-grid-3">
-      <div class="stat-box seafoam" onclick="goPage('sales')">
-        <div class="label">销售额</div>
-        <div class="num" id="dashTodayRev" style="font-size:18px">¥0</div>
+  <div class="bento-grid">
+    <!-- 早安卡 -->
+    <div class="bent greeting-card">
+      <div class="greeting-left">
+        <span class="greeting-date" id="todayDate"></span>
+        <span class="greeting-slogan">今天也要闪闪发光哦 ✨</span>
       </div>
-      <div class="stat-box pink" onclick="goPage('sales')">
-        <div class="label">利润</div>
-        <div class="num" id="dashTodayProfit" style="font-size:18px">¥0</div>
+      <div class="greeting-right">
+        <div class="greeting-rev-label">今日销售额</div>
+        <div class="greeting-rev" id="homeGreetingRev">¥0</div>
       </div>
-      <div class="stat-box yellow" onclick="goPage('sales')">
-        <div class="label">利润率</div>
-        <div class="num" id="dashTodayRate" style="font-size:18px">0%</div>
+      <span class="greeting-bear">🐻</span>
+    </div>
+    <!-- 产品种类 / 约稿成本 -->
+    <div class="bent bent-seafoam" onclick="goPage('products')">
+      <div class="bl">📦 产品种类</div>
+      <div class="bv" id="dashProductCount">0</div>
+      <div class="bs" id="dashTotalStock">总库存 0</div>
+    </div>
+    <div class="bent bent-pink" onclick="goPage('more');setTimeout(function(){switchMoreTab('commission')},100)">
+      <div class="bl">🎨 约稿成本</div>
+      <div class="bv" id="dashCommCost" style="font-size:18px">¥0</div>
+      <div class="bs" id="dashCommCount">0 笔约稿</div>
+    </div>
+    <!-- 今日销售额 / 利润 -->
+    <div class="bent bent-seafoam" onclick="goPage('sales')">
+      <div class="bl">💰 今日销售额</div>
+      <div class="bv" id="dashTodayRev" style="font-size:20px">¥0</div>
+    </div>
+    <div class="bent bent-pink" onclick="goPage('sales')">
+      <div class="bl">💸 今日利润</div>
+      <div class="bv" id="dashTodayProfit" style="font-size:20px">¥0</div>
+    </div>
+    <!-- 利润率环 -->
+    <div class="bent rate-card">
+      <div class="rate-left">
+        <div class="card-title" style="margin-bottom:0">📊 今日利润率</div>
+        <div class="rate-sub" id="homeGreetingCount">0 笔交易</div>
+      </div>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="28"></circle>
+          <circle class="ring-fg" id="rateRing" cx="32" cy="32" r="28"></circle>
+        </svg>
+        <div class="ring-label" id="rateRingLabel">0%</div>
       </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-title">📅 本月累计</div>
-    <div class="dash-stat-row"><span>总销售额</span><b id="dashMonthRev">¥0</b></div>
-    <div class="dash-stat-row"><span>总支出</span><b id="dashMonthExpense">¥0</b></div>
-    <div id="dashExpenseDetail"></div>
-    <div class="dash-stat-row" style="border-top:1px solid var(--cream-deep);padding-top:8px;margin-top:4px"><span>净利</span><b id="dashMonthNet">¥0</b></div>
-  </div>
-  <div class="card">
-    <div class="card-title">📈 本月销售趋势</div>
-    <canvas id="trendCanvas" width="320" height="120"></canvas>
-  </div>
-  <div class="card">
-    <div class="card-title">🛒 本月渠道分布</div>
-    <div id="dashChannel" class="channel-wrap"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">🔥 热销Top3</div>
-    <div id="dashTop3"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">⚠️ 预警区</div>
-    <div id="dashAlerts"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">⚡ 快捷入口</div>
-    <div class="quick-nav">
+    <!-- 本月累计 -->
+    <div class="bent span-2">
+      <div class="card-title">📅 本月累计</div>
+      <div class="dash-stat-row"><span>总销售额</span><b id="dashMonthRev">¥0</b></div>
+      <div class="dash-stat-row"><span>总支出</span><b id="dashMonthExpense">¥0</b></div>
+      <div id="dashExpenseDetail"></div>
+      <div class="dash-stat-row" style="border-top:1px solid var(--cream-deep);padding-top:8px;margin-top:4px"><span>净利</span><b id="dashMonthNet">¥0</b></div>
+    </div>
+    <!-- 本月销售趋势 -->
+    <div class="bent span-2"><div class="card-title">📈 本月销售趋势</div><canvas id="trendCanvas" width="320" height="120" style="width:100%;margin-top:6px"></canvas></div>
+    <!-- 本月渠道分布 -->
+    <div class="bent span-2"><div class="card-title">🛒 本月渠道分布</div><div id="dashChannel" class="channel-wrap"></div></div>
+    <!-- 热销Top3 -->
+    <div class="bent span-2"><div class="card-title">🔥 热销Top3</div><div id="dashTop3"></div></div>
+    <!-- 待办提醒 -->
+    <div class="bent span-2"><div class="card-title">⚠️ 待办提醒</div><div id="dashAlerts"></div></div>
+    <!-- 快捷入口 -->
+    <div class="bent span-2"><div class="card-title">⚡ 快捷入口</div><div class="quick-nav">
       <div class="qn" onclick="goPage('products')"><span class="qn-ico">📦</span><span class="qn-label">产品管理</span></div>
       <div class="qn" onclick="goPage('sales')"><span class="qn-ico">🛒</span><span class="qn-label">销售记录</span></div>
       <div class="qn" onclick="goPage('calc')"><span class="qn-ico">🧮</span><span class="qn-label">定价计算</span></div>
@@ -390,7 +455,7 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
       <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('supplier')},100)"><span class="qn-ico">🏪</span><span class="qn-label">供应商</span></div>
       <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('purchase')},100)"><span class="qn-ico">🛒</span><span class="qn-label">采购进货</span></div>
       <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('bundle')},100)"><span class="qn-ico">🎁</span><span class="qn-label">组合套组</span></div>
-    </div>
+    </div></div>
   </div>
 </div>
 
@@ -907,7 +972,7 @@ var state={
 };
 var CAT_ICONS=['🐻','🐰','🐱','🐶','🐻‍❄️','🐼','🐨','🦊','🐹','🐸','🌟','🌸','🍰','🎀','📚','🎨'];
 var CAT_COLORS=[
-  {name:'seafoam',bg:'#E8FAF6',light:'#B8E8DE',deep:'#5BB8A5'},
+  {name:'seafoam',bg:'#E8FAF6',light:'#B8E8DE',deep:'#5FCBB6'},
   {name:'pink',bg:'#FFF0F5',light:'#FFD6E0',deep:'#FF9EB5'},
   {name:'blue',bg:'#F0F8FF',light:'#C8E6F5',deep:'#8EC9E8'},
   {name:'yellow',bg:'#FFFCEB',light:'#FFF0B8',deep:'#FFD93D'},
@@ -1090,8 +1155,11 @@ function renderHome(){
   var tProf=ts.reduce(function(s,x){return s+(x.profit||0)},0);
   var tRate=tRev>0?(tProf/tRev*100):0;
   document.getElementById('dashTodayRev').textContent='¥'+tRev.toFixed(0);
+  var hgr=document.getElementById('homeGreetingRev');if(hgr)hgr.textContent='¥'+tRev.toFixed(0);
+  var hgc=document.getElementById('homeGreetingCount');if(hgc)hgc.textContent=ts.length+' 笔交易';
   document.getElementById('dashTodayProfit').textContent='¥'+tProf.toFixed(0);
-  document.getElementById('dashTodayRate').textContent=tRate.toFixed(0)+'%';
+  var ring=document.getElementById('rateRing');if(ring){var C=175.9;ring.style.strokeDashoffset=C*(1-Math.min(100,Math.max(0,tRate))/100);}
+  var rl=document.getElementById('rateRingLabel');if(rl)rl.textContent=tRate.toFixed(0)+'%';
   // 本月累计
   var ms=state.sales.filter(function(s){return s.date&&s.date.indexOf(mp)===0});
   var mRev=ms.reduce(function(s,x){return s+(x.revenue||0)},0);
@@ -1184,7 +1252,7 @@ function drawTrend(){
   var baseY=H-14,pad=4,bw=(W-pad*2)/days;
   for(var i=0;i<days;i++){
     var bh=max>0?Math.round(data[i]/max*(H-22)):0;
-    ctx.fillStyle=data[i]>0?'#5BB8A5':'#EDE6DA';
+    ctx.fillStyle=data[i]>0?'#5FCBB6':'#EDE6DA';
     if(bh>0)ctx.fillRect(pad+i*bw+0.5,baseY-bh,bw-1,bh);
   }
   ctx.fillStyle='#B8A595';ctx.font='10px sans-serif';
@@ -2235,7 +2303,7 @@ function calcPrice(){
   var su=be*(1+margin);
   document.getElementById('calcSuggestedHidden').value=su;
   document.getElementById('calcTotalCostHidden').value=tc2;
-  var parts=[{n:'产品',v:cost,c:'#5BB8A5'},{n:'包材',v:pkg,c:'#8EC9E8'},{n:'推广',v:promo,c:'#FFD93D'},{n:'赠品',v:gift,c:'#FF9EB5'},{n:'约稿',v:comm,c:'#B8A0D8'},{n:'运费',v:ship,c:'#7FCE9F'}].filter(function(x){return x.v>0});
+  var parts=[{n:'产品',v:cost,c:'#5FCBB6'},{n:'包材',v:pkg,c:'#8EC9E8'},{n:'推广',v:promo,c:'#FFD93D'},{n:'赠品',v:gift,c:'#FF9EB5'},{n:'约稿',v:comm,c:'#B8A0D8'},{n:'运费',v:ship,c:'#7FCE9F'}].filter(function(x){return x.v>0});
   var tfb=parts.reduce(function(s,x){return s+x.v},0)||1;
   var up=mp>0?mp:su;
   var fee=up*feeRate,rp=up-tc2-fee,rr=up>0?rp/up*100:0,isL=rp<0;
@@ -2477,8 +2545,8 @@ function showInstallBanner(){
   if(!deferredPrompt)return;
   if(localStorage.getItem('pwa_installed'))return;
   var b=document.createElement('div');
-  b.style.cssText='position:fixed;bottom:96px;left:14px;right:14px;z-index:150;background:linear-gradient(135deg,#7FDBCA,#5BB8A5);color:#fff;padding:12px 16px;border-radius:16px;box-shadow:0 4px 16px rgba(91,184,165,.4);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600';
-  b.innerHTML='<span style="font-size:24px">🐻</span><div style="flex:1"><div style="font-size:14px">安装到手机桌面</div><div style="font-size:11px;opacity:.8">离线也能用，像App一样打开</div></div><button id="installBtn" style="background:#fff;color:#5BB8A5;border:none;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer">安装</button><button id="closeInstallBtn" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:4px">×</button>';
+  b.style.cssText='position:fixed;bottom:96px;left:14px;right:14px;z-index:150;background:linear-gradient(135deg,#7FDBCA,#5FCBB6);color:#fff;padding:12px 16px;border-radius:16px;box-shadow:0 4px 16px rgba(91,184,165,.4);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600';
+  b.innerHTML='<span style="font-size:24px">🐻</span><div style="flex:1"><div style="font-size:14px">安装到手机桌面</div><div style="font-size:11px;opacity:.8">离线也能用，像App一样打开</div></div><button id="installBtn" style="background:#fff;color:#5FCBB6;border:none;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer">安装</button><button id="closeInstallBtn" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:4px">×</button>';
   document.body.appendChild(b);
   document.getElementById('installBtn').onclick=function(){
     deferredPrompt.prompt();
