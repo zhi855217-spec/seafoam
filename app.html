@@ -240,9 +240,49 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 .deco{position:fixed;pointer-events:none;z-index:0;opacity:.15}
 .deco-1{top:120px;right:-20px}
 .deco-2{bottom:100px;left:-20px}
+
+/* ===== PIN 锁屏 ===== */
+.lock-screen{position:fixed;inset:0;z-index:999;display:none;align-items:center;justify-content:center;background:linear-gradient(160deg,#7FDBCA 0%,#A8E6D4 60%,#FFE3C8 100%);padding:20px}
+.lock-card{width:100%;max-width:300px;background:rgba(255,255,255,.96);border-radius:20px;padding:26px 22px;box-shadow:0 12px 40px rgba(91,140,120,.35);text-align:center}
+.lock-logo{font-size:20px;font-weight:800;color:var(--seafoam-deep);margin-bottom:4px}
+.lock-title{font-size:14px;color:var(--brown-soft);margin-bottom:16px}
+.lock-input{width:100%;padding:12px;border:1.5px solid var(--cream-deep);border-radius:12px;font-size:18px;text-align:center;letter-spacing:4px;margin-bottom:10px;outline:none}
+.lock-input:focus{border-color:var(--seafoam)}
+.lock-msg{font-size:12px;color:var(--blush-deep);min-height:16px;margin-bottom:8px}
+.lock-links{margin-top:14px;font-size:11px;color:var(--brown-light)}
+.lock-links span{text-decoration:underline;cursor:pointer}
+
+/* ===== 渠道分布 ===== */
+.channel-wrap{display:flex;flex-direction:column;gap:10px}
+.channel-item .channel-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.channel-item .channel-top b{color:var(--seafoam-deep)}
+.channel-bar{height:8px;background:var(--cream-deep);border-radius:6px;overflow:hidden}
+.channel-bar>div{height:100%;border-radius:6px;transition:width .4s}
+
+/* ===== 产品搜索工具条 ===== */
+.prod-toolbar{display:flex;gap:8px;margin-bottom:10px}
+.prod-toolbar .form-input{flex:1;padding:9px 12px;border:1.5px solid var(--cream-deep);border-radius:12px;font-size:13px;outline:none}
+.prod-toolbar .form-input:focus{border-color:var(--seafoam)}
+.prod-toolbar .form-select{max-width:120px;padding:9px 8px;border:1.5px solid var(--cream-deep);border-radius:12px;font-size:13px;background:#fff}
+
+/* ===== 趋势图 ===== */
+#trendCanvas{width:100%;height:120px;display:block}
 </style>
 </head>
 <body>
+
+<!-- ====== PIN 锁屏 ====== -->
+<div id="lockScreen" class="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo">🐻 Seafoam</div>
+    <div id="lockTitle" class="lock-title">输入密码</div>
+    <input id="lockPin" type="password" inputmode="numeric" maxlength="12" class="lock-input" placeholder="密码" onkeydown="if(event.key==='Enter')lockSubmit()">
+    <input id="lockPin2" type="password" inputmode="numeric" maxlength="12" class="lock-input" placeholder="再输一次确认" style="display:none" onkeydown="if(event.key==='Enter')lockSubmit()">
+    <div id="lockMsg" class="lock-msg"></div>
+    <button id="lockSubmitBtn" class="btn btn-primary btn-block" onclick="lockSubmit()">解锁</button>
+    <div class="lock-links"><span id="lockResetLink" onclick="lockReset()">忘记密码？重置（将清空本地数据）</span></div>
+  </div>
+</div>
 <svg class="deco deco-1" viewBox="0 0 100 100" width="80" height="80" style="transform:rotate(-15deg)">
   <ellipse cx="35" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#8B7B6B" stroke-width="2.5"/>
   <ellipse cx="65" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#8B7B6B" stroke-width="2.5"/>
@@ -324,6 +364,14 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
     <div class="dash-stat-row" style="border-top:1px solid var(--cream-deep);padding-top:8px;margin-top:4px"><span>净利</span><b id="dashMonthNet">¥0</b></div>
   </div>
   <div class="card">
+    <div class="card-title">📈 本月销售趋势</div>
+    <canvas id="trendCanvas" width="320" height="120"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title">🛒 本月渠道分布</div>
+    <div id="dashChannel" class="channel-wrap"></div>
+  </div>
+  <div class="card">
     <div class="card-title">🔥 热销Top3</div>
     <div id="dashTop3"></div>
   </div>
@@ -369,6 +417,15 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
         </div>
         <button class="btn btn-primary btn-sm" onclick="openProductModal()">＋ 新增</button>
       </div>
+    </div>
+    <div class="prod-toolbar">
+      <input id="prodSearch" class="form-input" placeholder="🔍 搜索名称/SKU" oninput="onProdSearch()">
+      <select id="prodStatusFilter" class="form-select" onchange="onProdFilter()">
+        <option value="">全部状态</option>
+        <option value="active">在售</option>
+        <option value="out_of_stock">缺货</option>
+        <option value="inactive">下架</option>
+      </select>
     </div>
     <div id="productContainer"></div>
   </div>
@@ -515,6 +572,7 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
       <div id="exportPreview" style="margin-bottom:12px"></div>
       <button class="btn btn-primary btn-block" onclick="exportSalesCSV()">📥 导出销售报表 (CSV/Excel)</button>
       <p style="font-size:11px;color:var(--brown-light);margin-top:8px;text-align:center">CSV文件可用Excel直接打开</p>
+      <div id="storageUsage" style="font-size:11px;color:var(--brown-light);margin-top:8px;text-align:center"></div>
     </div>
     <div class="card" style="margin-top:14px">
       <div class="card-title">👥 多人协作 · 数据合并</div>
@@ -899,6 +957,16 @@ function mergeState(def,loaded){
   }
   return r;
 }
+function updateStorageUsage(){
+  var el=document.getElementById('storageUsage');if(!el)return;
+  try{
+    var raw=localStorage.getItem(STORAGE_KEY)||'';
+    var mb=(raw.length*2)/(1024*1024);
+    var pct=Math.min(100,mb/5*100);
+    var warn=pct>80?' <span style="color:var(--blush-deep)">（快满了，建议导出备份+减少大图）</span>':'';
+    el.innerHTML='💾 本地已用 '+mb.toFixed(2)+' MB / 5 MB'+warn;
+  }catch(e){}
+}
 function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
@@ -907,6 +975,7 @@ function saveState(){
       sales:state.sales,priceHistory:state.priceHistory,assemblies:state.assemblies,purchases:state.purchases,bundles:state.bundles,expenseTypes:state.expenseTypes,
       materialOptions:state.materialOptions,usageOptions:state.usageOptions,settings:state.settings
     }));
+    updateStorageUsage();
   }catch(e){toast('存储空间不足，建议减少大图')}
 }
 function migrateData(){
@@ -1047,6 +1116,17 @@ function renderHome(){
   var netEl=document.getElementById('dashMonthNet');
   netEl.textContent=(mNet>=0?'+':'')+'¥'+mNet.toFixed(0);
   netEl.style.color=mNet>=0?'var(--seafoam-deep)':'var(--blush-deep)';
+  // 本月渠道分布
+  var byCh={};
+  ms.forEach(function(s){var ch=s.platform||'其他';if(!byCh[ch])byCh[ch]={rev:0,prof:0,qty:0};byCh[ch].rev+=(s.revenue||0);byCh[ch].prof+=(s.profit||0);byCh[ch].qty+=(s.quantity||0)});
+  var chKeys=Object.keys(byCh),chh='';
+  if(chKeys.length===0)chh='<p style="font-size:12px;color:var(--brown-light);text-align:center;padding:6px">本月暂无销售</p>';
+  else{
+    var maxCh=Math.max.apply(null,chKeys.map(function(k){return byCh[k].rev}));
+    chh=chKeys.map(function(k){var d=byCh[k];var pct=maxCh>0?Math.max(6,Math.round(d.rev/maxCh*100)):0;return '<div class="channel-item"><div class="channel-top"><span>'+esc(k)+'</span><b>¥'+d.rev.toFixed(0)+'</b></div><div class="channel-bar"><div style="width:'+pct+'%;background:var(--seafoam-deep)"></div></div><div style="font-size:11px;color:var(--brown-light);margin-top:2px">利润¥'+d.prof.toFixed(0)+' · '+d.qty+'件</div></div>'}).join('');
+  }
+  var chEl=document.getElementById('dashChannel');if(chEl)chEl.innerHTML=chh;
+  drawTrend();
   // 热销Top3
   var ps2={};
   ms.forEach(function(s){var key=s.itemType==='bundle'?('B:'+s.bundleId):('P:'+(s.productId||''));if(!ps2[key])ps2[key]={qty:0,rev:0,isBundle:s.itemType==='bundle',id:s.itemType==='bundle'?s.bundleId:s.productId};ps2[key].qty+=(s.quantity||0);ps2[key].rev+=(s.revenue||0)});
@@ -1089,6 +1169,28 @@ function renderHome(){
   document.getElementById('dashAlerts').innerHTML=ah;
 }
 
+function drawTrend(){
+  var cv=document.getElementById('trendCanvas');if(!cv)return;
+  var ctx=cv.getContext('2d');var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var y=new Date().getFullYear(),mo=new Date().getMonth();
+  var days=new Date(y,mo+1,0).getDate();
+  var data=[],max=0;
+  for(var d=1;d<=days;d++){
+    var ds=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var rev=state.sales.filter(function(s){return s.date===ds}).reduce(function(a,b){return a+(b.revenue||0)},0);
+    data.push(rev);if(rev>max)max=rev;
+  }
+  var baseY=H-14,pad=4,bw=(W-pad*2)/days;
+  for(var i=0;i<days;i++){
+    var bh=max>0?Math.round(data[i]/max*(H-22)):0;
+    ctx.fillStyle=data[i]>0?'#5BB8A5':'#EDE6DA';
+    if(bh>0)ctx.fillRect(pad+i*bw+0.5,baseY-bh,bw-1,bh);
+  }
+  ctx.fillStyle='#B8A595';ctx.font='10px sans-serif';
+  ctx.fillText('峰值 ¥'+max.toFixed(0),pad,baseY+12);
+  ctx.fillText('日',W-14,baseY+12);
+}
 // ========== 分类管理 ==========
 function renderCategoryList(){
   var g=document.getElementById('categoryGrid');
@@ -1171,10 +1273,23 @@ function doDeleteCategory(id){
 
 // ========== 产品管理 ==========
 function setProductView(v){state.productView=v;document.getElementById('viewGridBtn').classList.toggle('active',v==='grid');document.getElementById('viewListBtn').classList.toggle('active',v==='list');renderProducts()}
+var prodSearch='';var prodStatusFilter='';
+function onProdSearch(){prodSearch=document.getElementById('prodSearch').value;renderProducts()}
+function onProdFilter(){prodStatusFilter=document.getElementById('prodStatusFilter').value;renderProducts()}
 function renderProducts(){
   var c=document.getElementById('productContainer');
   var list=state.products.filter(function(p){return p.categoryId===state.currentCategory});
-  if(list.length===0){c.innerHTML='<div class="empty"><span class="emoji">📦</span>此分类下还没有产品<br>点击右下角＋添加</div>';return}
+  var kw=(prodSearch||'').trim().toLowerCase();
+  if(kw)list=list.filter(function(p){return (p.name||'').toLowerCase().indexOf(kw)>=0||(p.sku||'').toLowerCase().indexOf(kw)>=0});
+  if(prodStatusFilter){
+    list=list.filter(function(p){
+      if(prodStatusFilter==='out_of_stock')return (p.stock||0)<=0;
+      if(prodStatusFilter==='inactive')return p.status==='inactive';
+      if(prodStatusFilter==='active')return (p.stock||0)>0&&p.status!=='inactive';
+      return true;
+    });
+  }
+  if(list.length===0){c.innerHTML='<div class="empty"><span class="emoji">📦</span>'+(kw||prodStatusFilter?'没有匹配的产品':'此分类下还没有产品')+'<br>点击右下角＋添加</div>';return}
   if(state.productView==='list')c.innerHTML='<div class="product-list">'+list.map(renderProductListItem).join('')+'</div>';
   else c.innerHTML='<div class="product-grid">'+list.map(renderProductCardItem).join('')+'</div>';
 }
@@ -2273,7 +2388,7 @@ function handleImgUpload(input,uid2,did){
   var file=input.files[0];if(!file)return;
   if(file.size>800*1024)toast('图片较大，压缩中...');
   var reader=new FileReader();
-  reader.onload=function(ev){var img=new Image();img.onload=function(){var c=document.createElement('canvas'),mw=400,w=img.width,h=img.height;if(w>mw){h=h*mw/w;w=mw}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);var d=c.toDataURL('image/jpeg',0.7);document.getElementById(did).value=d;setImgDisplay(d,uid2)};img.src=ev.target.result};
+  reader.onload=function(ev){var img=new Image();img.onload=function(){var c=document.createElement('canvas'),mw=340,w=img.width,h=img.height;if(w>mw){h=h*mw/w;w=mw}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);var d=c.toDataURL('image/jpeg',0.6);document.getElementById(did).value=d;setImgDisplay(d,uid2)};img.src=ev.target.result};
   reader.readAsDataURL(file);
 }
 function onImgUrlInput(input,uid2,did){var v=input.value.trim();document.getElementById(did).value=v;setImgDisplay(v,uid2)}
@@ -2290,10 +2405,49 @@ document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener(
 // ========== 日期初始化 ==========
 (function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
 
-// ========== 初始化 ==========
-loadState();
-migrateData();
-renderHome();
+// ========== 初始化（先锁屏，解锁后加载） ==========
+function loadApp(){
+  loadState();migrateData();renderHome();
+  updateStorageUsage();
+  if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(function(){})}
+}
+function initLock(){
+  var ls=document.getElementById('lockScreen');
+  var pin=localStorage.getItem('seafoam_pin_v1');
+  var titleEl=document.getElementById('lockTitle'),btn=document.getElementById('lockSubmitBtn'),
+      p2=document.getElementById('lockPin2'),reset=document.getElementById('lockResetLink'),msg=document.getElementById('lockMsg');
+  msg.textContent='';
+  if(pin===null){
+    window.__lockMode='setup';titleEl.textContent='设置密码';btn.textContent='设置并进入';
+    p2.style.display='block';reset.style.display='none';
+  }else{
+    window.__lockMode='unlock';titleEl.textContent='输入密码';btn.textContent='解锁';
+    p2.style.display='none';reset.style.display='inline';
+  }
+  ls.style.display='flex';
+  setTimeout(function(){var i=document.getElementById('lockPin');if(i)i.focus()},120);
+}
+function lockMsg(m){var el=document.getElementById('lockMsg');if(el)el.textContent=m}
+function lockSubmit(){
+  var p1=document.getElementById('lockPin').value;
+  if(window.__lockMode==='setup'){
+    var p2v=document.getElementById('lockPin2').value;
+    if(p1.length<4){lockMsg('密码至少4位');return}
+    if(p1!==p2v){lockMsg('两次输入不一致');return}
+    localStorage.setItem('seafoam_pin_v1',p1);
+    document.getElementById('lockScreen').style.display='none';
+    loadApp();
+  }else{
+    var pin=localStorage.getItem('seafoam_pin_v1');
+    if(p1===pin){document.getElementById('lockScreen').style.display='none';loadApp()}
+    else{lockMsg('密码错误');document.getElementById('lockPin').value='';document.getElementById('lockPin').focus()}
+  }
+}
+function lockReset(){
+  if(!confirm('重置将清空所有本地数据并删除密码，确定吗？'))return;
+  localStorage.clear();location.reload();
+}
+initLock();
 </script>
 
 <script>
