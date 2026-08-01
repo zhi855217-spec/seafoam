@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Seafoam 文创工作台</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7FDBCA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Seafoam">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon-32.png">
+<style>
+:root{
+  --seafoam:#7FDBCA;--seafoam-light:#B8E8DE;--seafoam-deep:#5BB8A5;
+  --cream:#FFF8E7;--cream-deep:#F5EAD3;
+  --blush:#FFD6E0;--blush-deep:#FF9EB5;
+  --sky:#C8E6F5;--sky-deep:#8EC9E8;
+  --yellow:#FFF0B8;--yellow-deep:#FFD93D;
+  --peach:#FFE0CC;--lavender:#E0D4F0;--lavender-deep:#B8A0D8;
+  --brown:#6B5849;--brown-soft:#8B7B6B;--brown-light:#B8A595;
+  --white:#FFFDF8;
+  --shadow:0 4px 16px rgba(91,184,165,.15);--shadow-sm:0 2px 8px rgba(91,184,165,.1);
+  --radius:18px;--radius-sm:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--brown);font-size:14px;line-height:1.5;padding-bottom:80px;overflow-x:hidden}
+img{display:block;max-width:100%}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--brown);outline:none}
+input::placeholder,textarea::placeholder{color:var(--brown-light)}
+.header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--seafoam-light) 0%,var(--seafoam) 50%,var(--seafoam-deep) 100%);padding:14px 16px 12px;box-shadow:0 2px 12px rgba(91,184,165,.25);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;color:#fff;display:flex;align-items:center;gap:8px;text-shadow:0 1px 4px rgba(0,0,0,.1)}
+.header .date{font-size:11px;color:rgba(255,255,255,.8)}
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--white);display:flex;box-shadow:0 -2px 16px rgba(91,184,165,.12);border-top:2px solid var(--seafoam-light);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar button{flex:1;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--brown-light);transition:.2s}
+.tabbar button.active{color:var(--seafoam-deep)}
+.tabbar button .ico{font-size:20px;line-height:1}
+.page{display:none;padding:12px 14px 20px;animation:fade .3s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:12px}
+.card-title{font-size:15px;font-weight:700;color:var(--brown);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.stat-box{border-radius:var(--radius-sm);padding:12px 10px;text-align:center;cursor:pointer;transition:.2s}
+.stat-box:active{transform:scale(.95)}
+.stat-box .label{font-size:10px;color:var(--brown-soft);margin-bottom:3px}
+.stat-box .num{font-size:20px;font-weight:800;color:var(--brown)}
+.stat-box .sub{font-size:9px;color:var(--brown-light);margin-top:2px}
+.stat-box.seafoam{background:linear-gradient(135deg,#E8FAF6,var(--seafoam-light))}
+.stat-box.pink{background:linear-gradient(135deg,#FFF0F5,var(--blush))}
+.stat-box.blue{background:linear-gradient(135deg,#F0F8FF,var(--sky))}
+.stat-box.yellow{background:linear-gradient(135deg,#FFFCEB,var(--yellow))}
+.stat-box.lavender{background:linear-gradient(135deg,#F5F0FA,var(--lavender))}
+.filter-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;background:var(--white);color:var(--brown-soft);box-shadow:var(--shadow-sm);transition:.2s;border:1.5px solid transparent}
+.chip.active{background:var(--seafoam-light);color:var(--seafoam-deep);border-color:var(--seafoam);font-weight:600}
+.category-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.category-card{background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);position:relative;transition:.2s;cursor:pointer}
+.category-card:active{transform:scale(.97)}
+.cat-card-img{width:100%;aspect-ratio:1.6;background:var(--cream-deep);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.cat-card-img img{width:100%;height:100%;object-fit:cover}
+.cat-card-img .cat-icon-bg{font-size:42px}
+.cat-card-top{padding:10px 12px 6px;text-align:center}
+.cat-card-top .cat-name{font-size:14px;font-weight:700;color:var(--brown)}
+.cat-card-body{padding:4px 12px 12px}
+.cat-card-body .cat-stat{font-size:11px;color:var(--brown-soft);display:flex;justify-content:space-between;margin-bottom:2px}
+.cat-card-body .cat-stat b{color:var(--brown)}
+.cat-card-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:10}
+.cat-card-actions button{background:rgba(255,255,255,.92);border-radius:6px;width:28px;height:28px;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--brown-soft);border:1px solid rgba(0,0,0,.06);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.cat-add-card{background:var(--cream);border-radius:var(--radius);border:2px dashed var(--seafoam-light);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;color:var(--seafoam-deep);font-size:13px;gap:6px;cursor:pointer;transition:.2s}
+.cat-add-card:active{transform:scale(.97)}
+.cat-add-card .plus{font-size:32px}
+.back-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.back-bar button{font-size:20px;color:var(--seafoam-deep);width:36px;height:36px;border-radius:10px;background:var(--white);box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center}
+.back-bar .title{font-size:16px;font-weight:700;color:var(--brown)}
+.view-toggle{display:flex;gap:6px;background:var(--cream-deep);border-radius:10px;padding:3px}
+.view-toggle button{padding:6px 12px;border-radius:8px;font-size:12px;color:var(--brown-soft);transition:.2s}
+.view-toggle button.active{background:var(--white);color:var(--seafoam-deep);box-shadow:var(--shadow-sm)}
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.product-list{display:flex;flex-direction:column;gap:10px}
+.product-card{background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);position:relative;transition:.2s;cursor:pointer}
+.product-card:active{transform:scale(.97)}
+.product-img{width:100%;aspect-ratio:1;background:var(--cream-deep);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.product-img img{width:100%;height:100%;object-fit:cover}
+.product-img .placeholder{font-size:36px;opacity:.4}
+.product-img .img2-badge{position:absolute;bottom:6px;right:6px;background:rgba(255,255,255,.9);border-radius:6px;padding:2px 6px;font-size:9px;color:var(--brown-soft)}
+.stock-warn{position:absolute;top:6px;right:6px;background:var(--blush-deep);color:#fff;border-radius:8px;padding:2px 8px;font-size:10px;font-weight:600}
+.product-info{padding:10px}
+.product-info .name{font-size:13px;font-weight:600;color:var(--brown);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-info .spec{font-size:10px;color:var(--brown-light);margin-bottom:4px}
+.product-info .supplier{font-size:10px;color:var(--sky-deep);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-info .price-row{display:flex;justify-content:space-between;align-items:center}
+.product-info .cost{font-size:11px;color:var(--brown-soft)}
+.product-info .sell{font-size:13px;font-weight:700;color:var(--seafoam-deep)}
+.product-info .stock{font-size:10px;color:var(--brown-soft);font-weight:600}
+.product-list .product-card{display:flex;overflow:hidden}
+.product-list .product-card .product-img{width:100px;height:100px;aspect-ratio:1;flex-shrink:0}
+.product-list .product-card .product-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.product-list .product-card .product-info .name{font-size:14px}
+.product-list .product-card .product-info .spec{font-size:11px}
+.product-list .product-card .product-info .meta-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.product-list .product-card .product-info .meta-tags .tag{font-size:9px}
+.sale-item{display:flex;gap:10px;padding:12px;background:var(--white);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);margin-bottom:8px;align-items:center}
+.sale-thumb{width:44px;height:44px;border-radius:8px;background:var(--cream-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.sale-thumb img{width:100%;height:100%;object-fit:cover}
+.sale-thumb .ph{font-size:20px;opacity:.4}
+.sale-info{flex:1;min-width:0}
+.sale-info .sname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sale-info .smeta{font-size:11px;color:var(--brown-light)}
+.sale-qty{font-size:12px;font-weight:600;color:var(--seafoam-deep);flex-shrink:0;text-align:right}
+.commission-item{display:flex;gap:12px;padding:12px;background:var(--white);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);margin-bottom:10px;align-items:center}
+.comm-thumb{width:56px;height:56px;border-radius:10px;background:var(--cream-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.comm-thumb img{width:100%;height:100%;object-fit:cover}
+.comm-thumb .ph{font-size:24px;opacity:.4}
+.comm-info{flex:1;min-width:0}
+.comm-info .cname{font-size:13px;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comm-info .cmeta{font-size:11px;color:var(--brown-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comm-amount{font-size:15px;font-weight:700;color:var(--blush-deep);flex-shrink:0}
+.pkg-item{background:var(--white);border-radius:var(--radius-sm);padding:12px;box-shadow:var(--shadow-sm);display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.pkg-thumb{width:52px;height:52px;border-radius:10px;background:var(--cream-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.pkg-thumb img{width:100%;height:100%;object-fit:cover}
+.pkg-thumb .ph{font-size:24px;opacity:.4}
+.pkg-info{flex:1;min-width:0}
+.pkg-info .pname{font-size:13px;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkg-info .pmeta{font-size:11px;color:var(--brown-light)}
+.pkg-info .pmeta b{color:var(--brown-soft)}
+.supplier-item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--white);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);margin-bottom:8px}
+.supplier-item .s-icon{width:40px;height:40px;border-radius:10px;background:var(--seafoam-light);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.supplier-item .s-info{flex:1;min-width:0}
+.supplier-item .s-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.supplier-item .s-meta{font-size:11px;color:var(--brown-light)}
+.btn{padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;background:var(--seafoam-light);color:var(--seafoam-deep);transition:.2s;display:inline-flex;align-items:center;gap:4px}
+.btn:active{transform:scale(.95)}
+.btn-primary{background:linear-gradient(135deg,var(--seafoam),var(--seafoam-deep));color:#fff}
+.btn-ghost{background:var(--cream-deep);color:var(--brown-soft)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-block{display:flex;width:100%;justify-content:center}
+.fab{position:fixed;right:16px;bottom:92px;z-index:60;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--seafoam),var(--seafoam-deep));color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(91,184,165,.4);transition:.2s}
+.fab:active{transform:scale(.9)}
+.modal-mask{position:fixed;inset:0;z-index:200;background:rgba(107,88,73,.4);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
+.modal-mask.show{display:flex;animation:fade .2s}
+.modal{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;padding:20px 16px calc(20px + env(safe-area-inset-bottom));animation:slideUp .3s}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-header h2{font-size:17px;color:var(--brown)}
+.modal-close{font-size:22px;color:var(--brown-light);width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;color:var(--brown-soft);margin-bottom:6px;font-weight:600;display:block}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;border:1.5px solid var(--cream-deep);border-radius:12px;background:var(--cream);font-size:14px;color:var(--brown);transition:.2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--seafoam);background:var(--white)}
+.form-textarea{resize:vertical;min-height:60px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.form-readonly{padding:10px 14px;background:var(--cream-deep);border-radius:12px;font-size:13px;color:var(--brown-soft)}
+.img-upload{width:100%;aspect-ratio:1;max-width:140px;border-radius:14px;border:2px dashed var(--seafoam-light);background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--brown-light);font-size:12px;cursor:pointer;overflow:hidden;position:relative}
+.img-upload img{width:100%;height:100%;object-fit:cover;position:absolute}
+.img-upload .up-ico{font-size:28px}
+.img-upload-row{display:flex;gap:12px}
+.img-upload-small{width:90px;height:90px;max-width:none;aspect-ratio:auto;border-radius:12px}
+.calc-product-pick{display:flex;align-items:center;gap:10px;padding:12px;background:var(--cream);border-radius:12px;margin-bottom:14px}
+.calc-product-pick img{width:44px;height:44px;border-radius:8px;object-fit:cover}
+.calc-product-pick .cp-name{font-size:13px;font-weight:600;flex:1}
+.calc-product-pick .cp-cost{font-size:11px;color:var(--brown-soft)}
+.calc-input{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-deep)}
+.calc-input label{font-size:13px;color:var(--brown-soft)}
+.calc-input .input-wrap{display:flex;align-items:center;gap:4px}
+.calc-input input{text-align:right;width:90px;padding:6px 10px;border:1.5px solid var(--cream-deep);border-radius:8px;background:var(--cream)}
+.calc-input .unit{font-size:11px;color:var(--brown-light)}
+.calc-result{background:linear-gradient(135deg,var(--seafoam-light),var(--seafoam));border-radius:16px;padding:16px;margin-top:14px;text-align:center}
+.calc-result.breakeven{background:linear-gradient(135deg,#FFE0B2,var(--yellow))}
+.calc-result.profit{background:linear-gradient(135deg,var(--blush),var(--blush-deep))}
+.calc-result .r-label{font-size:11px;color:rgba(107,88,73,.7);margin-bottom:4px}
+.calc-result .r-value{font-size:28px;font-weight:800;color:var(--brown)}
+.calc-result .r-sub{font-size:11px;color:var(--brown-soft);margin-top:2px}
+.cost-bar{display:flex;height:24px;border-radius:8px;overflow:hidden;margin-bottom:8px}
+.cost-bar div{display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:600;transition:.3s}
+.cost-legend{display:flex;flex-wrap:wrap;gap:8px}
+.cost-legend span{font-size:10px;color:var(--brown-soft);display:flex;align-items:center;gap:4px}
+.cost-legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.expense-item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--white);border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:8px}
+.expense-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.expense-icon.promo{background:var(--sky)}
+.expense-icon.gift{background:var(--blush)}
+.expense-icon.pkg{background:var(--seafoam-light)}
+.expense-icon.ship{background:var(--lavender)}
+.expense-icon.other{background:var(--yellow)}
+.expense-info{flex:1;min-width:0}
+.expense-info .ename{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expense-info .emeta{font-size:11px;color:var(--brown-light)}
+.expense-amount{font-size:15px;font-weight:700;color:var(--blush-deep)}
+.empty{text-align:center;padding:40px 20px;color:var(--brown-light)}
+.empty .emoji{font-size:48px;display:block;margin-bottom:8px;opacity:.5}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.section-head h2{font-size:16px;color:var(--brown)}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600}
+.tag-pink{background:var(--blush);color:var(--brown)}
+.tag-blue{background:var(--sky);color:var(--brown)}
+.tag-seafoam{background:var(--seafoam-light);color:var(--seafoam-deep)}
+.tag-yellow{background:var(--yellow);color:var(--brown)}
+.tag-lavender{background:var(--lavender);color:var(--brown)}
+.sub-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--cream-deep);border-radius:14px;padding:4px;overflow-x:auto;scrollbar-width:none}
+.sub-tabs::-webkit-scrollbar{display:none}
+.sub-tabs button{flex:1;min-width:50px;padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;color:var(--brown-soft);transition:.2s;white-space:nowrap}
+.sub-tabs button.active{background:var(--white);color:var(--seafoam-deep);box-shadow:var(--shadow-sm)}
+.quick-nav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.quick-nav .qn{background:var(--white);border-radius:var(--radius-sm);padding:14px 8px;text-align:center;box-shadow:var(--shadow-sm);transition:.2s;cursor:pointer}
+.quick-nav .qn:active{transform:scale(.95)}
+.quick-nav .qn .qn-ico{font-size:28px;display:block;margin-bottom:4px}
+.quick-nav .qn .qn-label{font-size:11px;color:var(--brown-soft);font-weight:600}
+.preset-cat{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.preset-cat button{padding:5px 12px;border-radius:16px;font-size:11px;background:var(--cream);color:var(--brown-soft);border:1.5px solid transparent}
+.preset-cat button.active{background:var(--seafoam-light);border-color:var(--seafoam);color:var(--seafoam-deep);font-weight:600}
+.preset-cat .del-type{background:#FFF0F3;color:var(--blush-deep);border-color:var(--blush);padding:4px 8px;font-size:10px}
+.type-add-row{display:flex;gap:6px;margin-top:8px}
+.type-add-row input{flex:1;padding:6px 10px;border:1.5px solid var(--cream-deep);border-radius:8px;background:var(--cream);font-size:12px}
+.type-add-row button{padding:6px 12px;border-radius:8px;background:var(--seafoam-light);color:var(--seafoam-deep);font-size:12px;font-weight:600}
+.action-row{display:flex;gap:8px;margin-top:12px}
+.action-row .btn{flex:1;justify-content:center}
+.dash-stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.dash-stat-row b{font-size:15px;font-weight:700}
+.dash-expense-detail{padding-left:16px;font-size:11px;color:var(--brown-light);line-height:1.6}
+.dash-top-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--cream-deep)}
+.dash-top-item:last-child{border-bottom:none}
+.dash-top-rank{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.status-badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;margin-left:4px}
+.status-active{background:var(--seafoam-light);color:var(--seafoam-deep)}
+.status-inactive{background:var(--brown-light);color:#fff}
+.status-out_of_stock{background:var(--blush);color:var(--blush-deep)}
+.sku-text{font-size:9px;color:var(--brown-light);font-family:monospace;margin-left:4px}
+.cost-breakdown-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.cost-breakdown-grid input{padding:6px 8px;border:1px solid var(--cream-deep);border-radius:8px;font-size:11px;text-align:center}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;background:rgba(91,184,165,.92);color:#fff;padding:10px 20px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.3s}
+.toast.show{opacity:1}
+.deco{position:fixed;pointer-events:none;z-index:0;opacity:.15}
+.deco-1{top:120px;right:-20px}
+.deco-2{bottom:100px;left:-20px}
+</style>
+</head>
+<body>
+<svg class="deco deco-1" viewBox="0 0 100 100" width="80" height="80" style="transform:rotate(-15deg)">
+  <ellipse cx="35" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#8B7B6B" stroke-width="2.5"/>
+  <ellipse cx="65" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#8B7B6B" stroke-width="2.5"/>
+  <ellipse cx="35" cy="22" rx="5" ry="7" fill="#FFD6E0"/>
+  <ellipse cx="65" cy="22" rx="5" ry="7" fill="#FFD6E0"/>
+  <circle cx="50" cy="55" r="30" fill="#FFF8E7" stroke="#8B7B6B" stroke-width="2.5"/>
+  <ellipse cx="32" cy="60" rx="7" ry="5" fill="#FFD6E0" opacity="0.8"/>
+  <ellipse cx="68" cy="60" rx="7" ry="5" fill="#FFD6E0" opacity="0.8"/>
+  <circle cx="42" cy="50" r="3" fill="#4A3C2E"/>
+  <circle cx="58" cy="50" r="3" fill="#4A3C2E"/>
+  <path d="M 44 63 Q 50 68 56 63" stroke="#8B7B6B" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>
+<svg class="deco deco-2" viewBox="0 0 100 100" width="60" height="60" style="transform:rotate(15deg)">
+  <ellipse cx="30" cy="18" rx="9" ry="11" fill="#C8E6F5" stroke="#8B7B6B" stroke-width="2"/>
+  <ellipse cx="70" cy="18" rx="9" ry="11" fill="#C8E6F5" stroke="#8B7B6B" stroke-width="2"/>
+  <circle cx="50" cy="55" r="30" fill="#E8F4FA" stroke="#8B7B6B" stroke-width="2.5"/>
+  <ellipse cx="32" cy="60" rx="6" ry="4" fill="#FFD6E0" opacity="0.8"/>
+  <ellipse cx="68" cy="60" rx="6" ry="4" fill="#FFD6E0" opacity="0.8"/>
+  <circle cx="42" cy="50" r="3" fill="#4A3C2E"/>
+  <circle cx="58" cy="50" r="3" fill="#4A3C2E"/>
+  <path d="M 44 63 Q 50 68 56 63" stroke="#8B7B6B" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>
+
+<header class="header">
+  <h1>
+    <svg viewBox="0 0 100 100" width="32" height="32" style="flex-shrink:0">
+      <ellipse cx="35" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#5BB8A5" stroke-width="2.5"/>
+      <ellipse cx="65" cy="22" rx="11" ry="13" fill="#FFF8E7" stroke="#5BB8A5" stroke-width="2.5"/>
+      <ellipse cx="35" cy="22" rx="5" ry="7" fill="#FFD6E0"/>
+      <ellipse cx="65" cy="22" rx="5" ry="7" fill="#FFD6E0"/>
+      <circle cx="50" cy="55" r="30" fill="#FFF8E7" stroke="#5BB8A5" stroke-width="2.5"/>
+      <ellipse cx="32" cy="60" rx="7" ry="5" fill="#FFD6E0" opacity="0.8"/>
+      <ellipse cx="68" cy="60" rx="7" ry="5" fill="#FFD6E0" opacity="0.8"/>
+      <circle cx="42" cy="50" r="3" fill="#4A3C2E"/>
+      <circle cx="58" cy="50" r="3" fill="#4A3C2E"/>
+      <path d="M 44 63 Q 50 68 56 63" stroke="#5BB8A5" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+    Seafoam
+  </h1>
+  <span class="date" id="todayDate"></span>
+</header>
+
+<!-- ====== 首页：经营驾驶舱 ====== -->
+<div class="page active" id="page-home">
+  <div class="stat-grid">
+    <div class="stat-box seafoam" onclick="goPage('products')">
+      <div class="label">产品种类</div>
+      <div class="num" id="dashProductCount">0</div>
+      <div class="sub" id="dashTotalStock">总库存 0</div>
+    </div>
+    <div class="stat-box pink" onclick="goPage('more');setTimeout(function(){switchMoreTab('commission')},100)">
+      <div class="label">约稿成本</div>
+      <div class="num" id="dashCommCost" style="font-size:18px">¥0</div>
+      <div class="sub" id="dashCommCount">0 笔约稿</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 今日实时</div>
+    <div class="stat-grid-3">
+      <div class="stat-box seafoam" onclick="goPage('sales')">
+        <div class="label">销售额</div>
+        <div class="num" id="dashTodayRev" style="font-size:18px">¥0</div>
+      </div>
+      <div class="stat-box pink" onclick="goPage('sales')">
+        <div class="label">利润</div>
+        <div class="num" id="dashTodayProfit" style="font-size:18px">¥0</div>
+      </div>
+      <div class="stat-box yellow" onclick="goPage('sales')">
+        <div class="label">利润率</div>
+        <div class="num" id="dashTodayRate" style="font-size:18px">0%</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 本月累计</div>
+    <div class="dash-stat-row"><span>总销售额</span><b id="dashMonthRev">¥0</b></div>
+    <div class="dash-stat-row"><span>总支出</span><b id="dashMonthExpense">¥0</b></div>
+    <div id="dashExpenseDetail"></div>
+    <div class="dash-stat-row" style="border-top:1px solid var(--cream-deep);padding-top:8px;margin-top:4px"><span>净利</span><b id="dashMonthNet">¥0</b></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔥 热销Top3</div>
+    <div id="dashTop3"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚠️ 预警区</div>
+    <div id="dashAlerts"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚡ 快捷入口</div>
+    <div class="quick-nav">
+      <div class="qn" onclick="goPage('products')"><span class="qn-ico">📦</span><span class="qn-label">产品管理</span></div>
+      <div class="qn" onclick="goPage('sales')"><span class="qn-ico">🛒</span><span class="qn-label">销售记录</span></div>
+      <div class="qn" onclick="goPage('calc')"><span class="qn-ico">🧮</span><span class="qn-label">定价计算</span></div>
+      <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('commission')},100)"><span class="qn-ico">🎨</span><span class="qn-label">约稿管理</span></div>
+      <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('expense')},100)"><span class="qn-ico">💰</span><span class="qn-label">费用记录</span></div>
+      <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('supplier')},100)"><span class="qn-ico">🏪</span><span class="qn-label">供应商</span></div>
+      <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('purchase')},100)"><span class="qn-ico">🛒</span><span class="qn-label">采购进货</span></div>
+      <div class="qn" onclick="goPage('more');setTimeout(function(){switchMoreTab('bundle')},100)"><span class="qn-ico">🎁</span><span class="qn-label">组合套组</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 产品管理 ====== -->
+<div class="page" id="page-products">
+  <div id="catListView">
+    <div class="section-head">
+      <h2>📦 产品分类</h2>
+      <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">＋ 新建</button>
+    </div>
+    <div class="category-grid" id="categoryGrid"></div>
+  </div>
+  <div id="catDetailView" style="display:none">
+    <div class="back-bar">
+      <button onclick="showCategoryList()">←</button>
+      <span class="title" id="catDetailTitle">分类</span>
+    </div>
+    <div class="section-head">
+      <h2 id="catDetailSubtitle">产品列表</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="view-toggle">
+          <button id="viewGridBtn" class="active" onclick="setProductView('grid')">▦</button>
+          <button id="viewListBtn" onclick="setProductView('list')">☰</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openProductModal()">＋ 新增</button>
+      </div>
+    </div>
+    <div id="productContainer"></div>
+  </div>
+</div>
+
+<!-- ====== 销售记录 ====== -->
+<div class="page" id="page-sales">
+  <div class="section-head">
+    <h2>🛒 销售记录</h2>
+    <button class="btn btn-primary btn-sm" onclick="openSaleModal()">＋ 记一笔</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-box seafoam"><div class="label">今日销售</div><div class="num" id="saleTodayRev" style="font-size:18px">¥0</div><div class="sub" id="saleTodayCount">0 笔</div></div>
+    <div class="stat-box pink"><div class="label">今日利润</div><div class="num" id="saleTodayProfit" style="font-size:18px">¥0</div><div class="sub" id="saleTodayQty">0 件</div></div>
+    <div class="stat-box blue"><div class="label">总销售额</div><div class="num" id="saleTotalRev" style="font-size:18px">¥0</div><div class="sub" id="saleTotalCount">0 笔</div></div>
+    <div class="stat-box yellow"><div class="label">总利润</div><div class="num" id="saleTotalProfit" style="font-size:18px">¥0</div><div class="sub" id="saleTotalQty">0 件</div></div>
+  </div>
+  <div class="filter-bar" id="saleDateFilter"></div>
+  <div id="saleList"></div>
+</div>
+
+<!-- ====== 智能定价计算器 ====== -->
+<div class="page" id="page-calc">
+  <div class="section-head"><h2>🧮 智能定价助手</h2></div>
+  <div class="card">
+    <div class="form-label">选择产品</div>
+    <select class="form-select" id="calcProduct" onchange="onCalcProductChange()"><option value="">— 请选择产品 —</option></select>
+    <div id="calcProductInfo"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🎨 约稿成本池</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--brown-soft)">勾选要计入的约稿</span>
+      <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px" onclick="toggleAllCommPool()">全选/取消</button>
+    </div>
+    <div id="commPoolList" style="max-height:200px;overflow-y:auto"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px dashed var(--border);padding-top:8px;margin-top:4px">
+      <span style="color:var(--brown-soft)">已选约稿费合计</span>
+      <b style="font-size:16px;color:var(--lavender-deep)" id="commPoolTotal">¥0.00</b>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="allocCommByQty()">📊 按件数分摊到当前产品</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📐 成本参数（每件）</div>
+    <div class="calc-input"><label>产品单件成本</label><div class="input-wrap"><input type="number" id="calcCost" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+    <div class="calc-input"><label>包材分摊</label><div class="input-wrap"><input type="number" id="calcPkg" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+    <div class="calc-input"><label>推广费用分摊</label><div class="input-wrap"><input type="number" id="calcPromo" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+    <div class="calc-input"><label>赠品成本分摊</label><div class="input-wrap"><input type="number" id="calcGift" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+    <div class="calc-input"><label>约稿成本分摊</label><div class="input-wrap"><input type="number" id="calcComm" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+    <div class="calc-input"><label>运费（买家付/自理）</label><div class="input-wrap"><input type="number" id="calcShip" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚙️ 售价参数</div>
+    <div class="calc-input"><label>平台抽成比例</label><div class="input-wrap"><input type="number" id="calcFee" value="5" step="0.5" oninput="calcPrice()"><span class="unit">%</span></div></div>
+    <div class="calc-input"><label>目标利润率</label><div class="input-wrap"><input type="number" id="calcMargin" value="40" oninput="calcPrice()"><span class="unit">%</span></div></div>
+    <div class="calc-input"><label>手动设定售价</label><div class="input-wrap"><input type="number" id="calcManualPrice" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+  </div>
+  <div id="calcResults"></div>
+  <input type="hidden" id="calcSuggestedHidden"><input type="hidden" id="calcTotalCostHidden">
+  <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="syncPriceToProduct()">📌 同步售价到产品</button>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">📝 定价历史</div>
+    <div id="priceHistoryList"></div>
+  </div>
+</div>
+
+<!-- ====== 更多 ====== -->
+<div class="page" id="page-more">
+  <div class="sub-tabs">
+    <button class="active" id="mtab-expense" onclick="switchMoreTab('expense')">💰 费用</button>
+    <button id="mtab-commission" onclick="switchMoreTab('commission')">🎨 约稿</button>
+    <button id="mtab-packaging" onclick="switchMoreTab('packaging')">📦 包材</button>
+    <button id="mtab-supplier" onclick="switchMoreTab('supplier')">🏪 供应商</button>
+    <button id="mtab-assembly" onclick="switchMoreTab('assembly')">🔀 分装</button>
+    <button id="mtab-purchase" onclick="switchMoreTab('purchase')">🛒 采购</button>
+    <button id="mtab-bundle" onclick="switchMoreTab('bundle')">🎁 套组</button>
+    <button id="mtab-export" onclick="switchMoreTab('export')">📊 导出</button>
+  </div>
+  <div id="more-expense">
+    <div class="section-head"><h2>💰 费用记录</h2><button class="btn btn-primary btn-sm" onclick="openExpenseModal()">＋ 记一笔</button></div>
+    <div class="stat-grid" id="expenseStatGrid"></div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">费用类型</label>
+        <div class="preset-cat" id="expTypePresets"></div>
+      </div>
+      <div class="type-add-row">
+        <input id="newExpType" placeholder="新增类型...">
+        <button onclick="addExpenseType()">添加</button>
+      </div>
+    </div>
+    <div id="expenseList"></div>
+  </div>
+  <div id="more-commission" style="display:none">
+    <div class="section-head"><h2>🎨 约稿成本</h2><button class="btn btn-primary btn-sm" onclick="openCommissionModal()">＋ 新增</button></div>
+    <div class="stat-grid">
+      <div class="stat-box pink"><div class="label">约稿总花费</div><div class="num" id="commTotalAmount" style="font-size:18px">¥0</div></div>
+      <div class="stat-box seafoam"><div class="label">画师数量</div><div class="num" id="commArtistCount" style="font-size:18px">0</div></div>
+    </div>
+    <div id="commissionList"></div>
+  </div>
+  <div id="more-packaging" style="display:none">
+    <div class="section-head"><h2>📦 包材管理</h2><button class="btn btn-primary btn-sm" onclick="openPkgModal()">＋ 新增</button></div>
+    <div id="pkgList"></div>
+  </div>
+  <div id="more-supplier" style="display:none">
+    <div class="section-head"><h2>🏪 供应商管理</h2><button class="btn btn-primary btn-sm" onclick="openSupplierModal()">＋ 新增</button></div>
+    <div id="supplierList"></div>
+  </div>
+  <div id="more-assembly" style="display:none">
+    <div class="section-head"><h2>🔀 分装管理</h2><button class="btn btn-primary btn-sm" onclick="openAssemblyModal()">＋ 新建分装</button></div>
+    <div class="stat-grid">
+      <div class="stat-box seafoam"><div class="label">分装次数</div><div class="num" id="asmCount" style="font-size:18px">0</div></div>
+      <div class="stat-box blue"><div class="label">消耗散卡</div><div class="num" id="asmTotalCards" style="font-size:18px">0 张</div></div>
+      <div class="stat-box yellow"><div class="label">生成成品</div><div class="num" id="asmTotalPacks" style="font-size:18px">0 包</div></div>
+    </div>
+    <div id="assemblyList"></div>
+  </div>
+  <div id="more-purchase" style="display:none">
+    <div class="section-head"><h2>🛒 采购进货</h2><button class="btn btn-primary btn-sm" onclick="openPurchaseModal()">＋ 记一笔采购</button></div>
+    <div class="stat-grid">
+      <div class="stat-box seafoam"><div class="label">采购次数</div><div class="num" id="purCount" style="font-size:18px">0</div></div>
+      <div class="stat-box blue"><div class="label">本月采购额</div><div class="num" id="purMonthTotal" style="font-size:18px">¥0</div></div>
+      <div class="stat-box pink"><div class="label">累计采购额</div><div class="num" id="purAllTotal" style="font-size:18px">¥0</div></div>
+    </div>
+    <div id="purchaseList"></div>
+  </div>
+  <div id="more-bundle" style="display:none">
+    <div class="section-head"><h2>🎁 组合套组</h2><button class="btn btn-primary btn-sm" onclick="openBundleModal()">＋ 新建套组</button></div>
+    <div class="stat-grid">
+      <div class="stat-box seafoam"><div class="label">套组数量</div><div class="num" id="bdlCount" style="font-size:18px">0</div></div>
+      <div class="stat-box blue"><div class="label">在售</div><div class="num" id="bdlActive" style="font-size:18px">0</div></div>
+      <div class="stat-box pink"><div class="label">缺货</div><div class="num" id="bdlOos" style="font-size:18px">0</div></div>
+    </div>
+    <div id="bundleList"></div>
+  </div>
+  <div id="more-export" style="display:none">
+    <div class="card">
+      <div class="card-title">📊 数据导出</div>
+      <div class="form-group">
+        <label class="form-label">选择月份</label>
+        <select class="form-select" id="exportMonth" onchange="updateExportPreview()"></select>
+      </div>
+      <div id="exportPreview" style="margin-bottom:12px"></div>
+      <button class="btn btn-primary btn-block" onclick="exportSalesCSV()">📥 导出销售报表 (CSV/Excel)</button>
+      <p style="font-size:11px;color:var(--brown-light);margin-top:8px;text-align:center">CSV文件可用Excel直接打开</p>
+    </div>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button class="active" onclick="goPage('home')"><span class="ico">🏠</span>首页</button>
+  <button onclick="goPage('products')"><span class="ico">📦</span>产品</button>
+  <button onclick="goPage('sales')"><span class="ico">🛒</span>销售</button>
+  <button onclick="goPage('calc')"><span class="ico">🧮</span>定价</button>
+  <button onclick="goPage('more')"><span class="ico">📋</span>更多</button>
+</nav>
+<button class="fab" id="fabBtn" onclick="fabAction()" style="display:none">＋</button>
+
+<!-- 模态框：分类 -->
+<div class="modal-mask" id="categoryModal"><div class="modal">
+  <div class="modal-header"><h2 id="categoryModalTitle">新建分类</h2><button class="modal-close" onclick="closeModal('categoryModal')">×</button></div>
+  <input type="hidden" id="catId"><input type="hidden" id="catImgData">
+  <div class="form-group">
+    <label class="form-label">分类图片（选填）</label>
+    <div class="img-upload img-upload-small" id="catImgUpload" onclick="document.getElementById('catImgFile').click()"><span class="up-ico">🖼</span><span>上传图片</span></div>
+    <input type="file" id="catImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this,'catImgUpload','catImgData')">
+  </div>
+  <div class="form-group"><label class="form-label">分类名称</label><input class="form-input" id="catName" placeholder="如：Chiikawa系列"></div>
+  <div class="form-group"><label class="form-label">分类图标</label><div class="preset-cat" id="catIconPresets"></div></div>
+  <div class="form-group"><label class="form-label">分类颜色</label><div class="preset-cat" id="catColorPresets"></div></div>
+  <div class="form-group"><label class="form-label">描述（选填）</label><textarea class="form-textarea" id="catDesc"></textarea></div>
+  <div id="catDefaultNotice" style="display:none;font-size:12px;color:var(--brown-light);text-align:center;padding:8px;background:var(--cream-deep);border-radius:8px;margin-bottom:10px">📌 默认分类可编辑，但不可删除</div>
+  <div id="catDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteCategory()">🗑 删除此分类</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('categoryModal')">取消</button><button class="btn btn-primary" onclick="saveCategory()">保存</button></div>
+</div></div>
+
+<!-- 模态框：产品 -->
+<div class="modal-mask" id="productModal"><div class="modal">
+  <div class="modal-header"><h2 id="productModalTitle">新增产品</h2><button class="modal-close" onclick="closeModal('productModal')">×</button></div>
+  <input type="hidden" id="prodId"><input type="hidden" id="prodImgData"><input type="hidden" id="prodImg2Data">
+  <div class="form-group"><label class="form-label">SKU编码</label><input class="form-input" id="prodSKU" readonly style="background:var(--cream-deep);color:var(--brown-light)"></div>
+  <div class="form-group">
+    <label class="form-label">产品图片（可上传2张）</label>
+    <div class="img-upload-row">
+      <div class="img-upload img-upload-small" id="prodImgUpload" onclick="document.getElementById('prodImgFile').click()"><span class="up-ico">📷</span><span>主图</span></div>
+      <div class="img-upload img-upload-small" id="prodImg2Upload" onclick="document.getElementById('prodImg2File').click()"><span class="up-ico">📷</span><span>细节图</span></div>
+    </div>
+    <input type="file" id="prodImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this,'prodImgUpload','prodImgData')">
+    <input type="file" id="prodImg2File" accept="image/*" style="display:none" onchange="handleImgUpload(this,'prodImg2Upload','prodImg2Data')">
+    <div style="margin-top:6px"><input class="form-input" id="prodImgUrl" placeholder="或粘贴主图链接" oninput="onImgUrlInput(this,'prodImgUpload','prodImgData')"></div>
+  </div>
+  <div class="form-group"><label class="form-label">产品名称 *</label><input class="form-input" id="prodName" placeholder="如：Chiikawa表情贴纸包"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">所属分类</label><select class="form-select" id="prodCategory"></select></div>
+    <div class="form-group"><label class="form-label">供应商</label><select class="form-select" id="prodSupplier"></select></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">规格尺寸</label><input class="form-input" id="prodSize" placeholder="如：A6/10×15cm"></div>
+    <div class="form-group"><label class="form-label">每包数量</label><input class="form-input" id="prodQty" type="number" placeholder="如：50张/包"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">材质</label><select class="form-select" id="prodMaterial" onchange="onMaterialChange()"></select></div>
+    <div class="form-group"><label class="form-label">用途</label><select class="form-select" id="prodUsage" onchange="onUsageChange()"></select></div>
+  </div>
+  <div id="customMaterialRow" style="display:none" class="form-group"><label class="form-label">自定义材质</label><div style="display:flex;gap:6px"><input class="form-input" id="customMaterial" placeholder="输入新材质"><button class="btn btn-sm" onclick="addCustomMaterial()">添加</button></div></div>
+  <div id="customUsageRow" style="display:none" class="form-group"><label class="form-label">自定义用途</label><div style="display:flex;gap:6px"><input class="form-input" id="customUsage" placeholder="输入新用途"><button class="btn btn-sm" onclick="addCustomUsage()">添加</button></div></div>
+  <div class="form-group">
+    <label class="form-label" style="cursor:pointer" onclick="toggleCostBreakdown()">💰 成本构成明细 <span id="costBreakdownArrow">▶</span></label>
+    <div id="costBreakdownSection" style="display:none">
+      <div class="cost-breakdown-grid">
+        <input type="number" step="0.01" id="cbRaw" placeholder="原材料" oninput="sumCostBreakdown()">
+        <input type="number" step="0.01" id="cbProcessing" placeholder="加工费" oninput="sumCostBreakdown()">
+        <input type="number" step="0.01" id="cbPackaging" placeholder="包材" oninput="sumCostBreakdown()">
+        <input type="number" step="0.01" id="cbCommission" placeholder="约稿分摊" oninput="sumCostBreakdown()">
+        <input type="number" step="0.01" id="cbPromo" placeholder="推广分摊" oninput="sumCostBreakdown()">
+        <input type="number" step="0.01" id="cbOther" placeholder="其他" oninput="sumCostBreakdown()">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span style="font-size:12px;color:var(--brown-light)">明细合计: <b id="cbTotal">¥0.00</b></span>
+        <button class="btn btn-ghost btn-sm" onclick="applyCostBreakdown()">汇总到成本</button>
+      </div>
+    </div>
+  </div>
+  <div class="form-row-3">
+    <div class="form-group"><label class="form-label">单件成本(元) *</label><input class="form-input" id="prodCost" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">建议售价(元)</label><input class="form-input" id="prodPrice" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">库存数量</label><input class="form-input" id="prodStock" type="number" placeholder="0"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">安全库存线</label><input class="form-input" id="prodSafetyStock" type="number" value="10" placeholder="10"></div>
+    <div class="form-group"><label class="form-label">产品状态</label><select class="form-select" id="prodStatus"><option value="active">在售</option><option value="inactive">下架</option><option value="out_of_stock">缺货</option></select></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">累计销量</label><div class="form-readonly" id="prodTotalSold">0 件</div></div>
+    <div class="form-group"><label class="form-label">累计利润</label><div class="form-readonly" id="prodTotalProfit">¥0.00</div></div>
+  </div>
+  <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="prodNote"></textarea></div>
+  <div id="prodDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteProduct()">🗑 删除此产品</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('productModal')">取消</button><button class="btn btn-primary" onclick="saveProduct()">保存</button></div>
+</div></div>
+
+<!-- 模态框：销售 -->
+<div class="modal-mask" id="saleModal"><div class="modal">
+  <div class="modal-header"><h2 id="saleModalTitle">记录销售</h2><button class="modal-close" onclick="closeModal('saleModal')">×</button></div>
+  <input type="hidden" id="saleId">
+  <input type="hidden" id="saleItemType" value="product">
+  <div class="preset-cat" style="margin-bottom:12px">
+    <button class="active" id="saleTypeBtn-product" onclick="switchSaleType('product')">📦 单品</button>
+    <button id="saleTypeBtn-bundle" onclick="switchSaleType('bundle')">🎁 套组</button>
+  </div>
+  <div class="form-group"><label class="form-label" id="saleSelectLabel">选择产品 *</label><select class="form-select" id="saleProduct" onchange="onSaleProductChange()"><option value="">— 请选择产品 —</option></select></div>
+  <div id="saleProductInfo"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">销售数量 *</label><input class="form-input" id="saleQty" type="number" value="1" oninput="calcSaleTotal()"></div>
+    <div class="form-group"><label class="form-label">成交单价(元)</label><input class="form-input" id="salePrice" type="number" step="0.01" oninput="calcSaleTotal()"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">销售渠道</label><select class="form-select" id="salePlatform"><option value="微店">微店</option><option value="小红书">小红书</option><option value="淘宝">淘宝</option><option value="闲鱼">闲鱼</option><option value="线下市集">线下市集</option><option value="朋友圈">朋友圈</option><option value="其他">其他</option></select></div>
+    <div class="form-group"><label class="form-label">销售日期</label><input class="form-input" id="saleDate" type="date"></div>
+  </div>
+  <div class="form-group"><label class="form-label">买家信息（选填）</label><input class="form-input" id="saleBuyer" placeholder="昵称/联系方式"></div>
+  <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="saleNote"></textarea></div>
+  <div style="display:flex;justify-content:space-between;padding:10px;background:var(--cream);border-radius:10px;margin-bottom:10px">
+    <span style="font-size:13px;color:var(--brown-soft)">总额</span><b id="saleTotalVal" style="font-size:16px;color:var(--seafoam-deep)">¥0.00</b>
+  </div>
+  <div style="text-align:center;font-size:13px;margin-bottom:10px" id="saleProfitVal"></div>
+  <div id="saleDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteSale()">🗑 删除此记录</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('saleModal')">取消</button><button class="btn btn-primary" onclick="saveSale()">保存</button></div>
+</div></div>
+
+<!-- 模态框：费用 -->
+<div class="modal-mask" id="expenseModal"><div class="modal">
+  <div class="modal-header"><h2>费用记录</h2><button class="modal-close" onclick="closeModal('expenseModal')">×</button></div>
+  <input type="hidden" id="expId"><input type="hidden" id="expImgData">
+  <div class="form-group"><label class="form-label">费用类型</label><div class="preset-cat" id="expTypePresets2"></div></div>
+  <div class="type-add-row" style="margin-bottom:14px"><input id="newExpType2" placeholder="新增类型..."><button onclick="addExpenseType()">添加</button></div>
+  <div class="form-group"><label class="form-label">费用名称 *</label><input class="form-input" id="expName" placeholder="如：小红书推广费"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">金额(元) *</label><input class="form-input" id="expAmount" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">费用日期</label><input class="form-input" id="expDate" type="date"></div>
+  </div>
+  <div class="form-group"><label class="form-label">关联产品（可选）</label><select class="form-select" id="expProduct"><option value="">— 无关联 —</option></select></div>
+  <div class="form-group"><label class="form-label">凭证图片（可选）</label><div class="img-upload img-upload-small" id="expImgUpload" onclick="document.getElementById('expImgFile').click()" style="height:80px"><span class="up-ico">📷</span><span>上传凭证</span></div><input type="file" id="expImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this,'expImgUpload','expImgData')"></div>
+  <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="expNote"></textarea></div>
+  <div id="expDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteExpense()">🗑 删除此费用</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('expenseModal')">取消</button><button class="btn btn-primary" onclick="saveExpense()">保存</button></div>
+</div></div>
+
+<!-- 模态框：约稿 -->
+<div class="modal-mask" id="commissionModal"><div class="modal">
+  <div class="modal-header"><h2 id="commissionModalTitle">新增约稿</h2><button class="modal-close" onclick="closeModal('commissionModal')">×</button></div>
+  <input type="hidden" id="commId"><input type="hidden" id="commImgData">
+  <div class="form-group"><label class="form-label">约稿图片</label><div class="img-upload img-upload-small" id="commImgUpload" onclick="document.getElementById('commImgFile').click()" style="height:80px"><span class="up-ico">🎨</span><span>点击上传约稿图</span></div><input type="file" id="commImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this,'commImgUpload','commImgData')"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">画师名字 *</label><input class="form-input" id="commArtist" placeholder="如：小A画师"></div>
+    <div class="form-group"><label class="form-label">联系方式</label><input class="form-input" id="commContact" placeholder="微信/QQ/微博"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">金额(元) *</label><input class="form-input" id="commAmount" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">约稿日期</label><input class="form-input" id="commDate" type="date"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">交稿日期</label><input class="form-input" id="commDeadline" type="date"></div>
+    <div class="form-group"><label class="form-label">状态</label><select class="form-select" id="commCompleted"><option value="0">进行中</option><option value="1">已交稿</option></select></div>
+  </div>
+  <div class="form-group"><label class="form-label">关联分类</label><select class="form-select" id="commCategory"><option value="">— 无关联 —</option></select></div>
+  <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="commNote"></textarea></div>
+  <div id="commDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteCommission()">🗑 删除此记录</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('commissionModal')">取消</button><button class="btn btn-primary" onclick="saveCommission()">保存</button></div>
+</div></div>
+
+<!-- 模态框：包材 -->
+<div class="modal-mask" id="pkgModal"><div class="modal">
+  <div class="modal-header"><h2 id="pkgModalTitle">新增包材</h2><button class="modal-close" onclick="closeModal('pkgModal')">×</button></div>
+  <input type="hidden" id="pkgId"><input type="hidden" id="pkgImgData">
+  <div class="form-group"><label class="form-label">包材图片</label><div class="img-upload img-upload-small" id="pkgImgUpload" onclick="document.getElementById('pkgImgFile').click()" style="height:80px"><span class="up-ico">📷</span><span>点击上传</span></div><input type="file" id="pkgImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this,'pkgImgUpload','pkgImgData')"></div>
+  <div class="form-group"><label class="form-label">包材名称 *</label><input class="form-input" id="pkgName" placeholder="如：透明信封袋"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">数量</label><input class="form-input" id="pkgQty" type="number" placeholder="0" oninput="calcPkgUnit()"></div>
+    <div class="form-group"><label class="form-label">总花费(元)</label><input class="form-input" id="pkgTotalCost" type="number" step="0.01" placeholder="0.00" oninput="calcPkgUnit()"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">单价(元)</label><input class="form-input" id="pkgUnitCost" type="number" step="0.0001" placeholder="0.000" oninput="calcPkgTotal()"></div>
+    <div class="form-group"><label class="form-label">库存</label><input class="form-input" id="pkgStock" type="number" placeholder="0"></div>
+  </div>
+  <div class="form-group"><label class="form-label">规格</label><input class="form-input" id="pkgSpec" placeholder="如：9×14cm"></div>
+  <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="pkgNote"></textarea></div>
+  <div id="pkgDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deletePkg()">🗑 删除此包材</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('pkgModal')">取消</button><button class="btn btn-primary" onclick="savePkg()">保存</button></div>
+</div></div>
+
+<!-- 模态框：供应商 -->
+<div class="modal-mask" id="supplierModal"><div class="modal">
+  <div class="modal-header"><h2 id="supplierModalTitle">新增供应商</h2><button class="modal-close" onclick="closeModal('supplierModal')">×</button></div>
+  <input type="hidden" id="supId">
+  <div class="form-group"><label class="form-label">供应商名称 *</label><input class="form-input" id="supName" placeholder="如：XX印刷厂"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">联系人</label><input class="form-input" id="supContact" placeholder="联系人/电话/微信"></div>
+    <div class="form-group"><label class="form-label">主营产品</label><input class="form-input" id="supMain" placeholder="如：贴纸印刷"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">合作状态</label><select class="form-select" id="supStatus"><option value="active">合作中</option><option value="paused">已暂停</option></select></div>
+    <div class="form-group"><label class="form-label">结算周期</label><input class="form-input" id="supPaymentCycle" placeholder="如：月结/货到付款"></div>
+  </div>
+  <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="supNote"></textarea></div>
+  <div id="supDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteSupplier()">🗑 删除此供应商</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('supplierModal')">取消</button><button class="btn btn-primary" onclick="saveSupplier()">保存</button></div>
+</div></div>
+
+<div class="modal-mask" id="assemblyModal"><div class="modal">
+  <div class="modal-header"><h2 id="assemblyModalTitle">新建分装</h2><button class="modal-close" onclick="closeModal('assemblyModal')">×</button></div>
+  <input type="hidden" id="asmId">
+  <div class="form-group"><label class="form-label">源材料（散卡）*</label><select class="form-select" id="asmSource" onchange="onAsmSourceChange()"><option value="">— 选择散卡产品 —</option></select>
+    <div id="asmSourceInfo" style="font-size:12px;color:var(--brown-soft);margin-top:4px"></div>
+  </div>
+  <div class="form-group"><label class="form-label">成品产品 *</label><select class="form-select" id="asmTarget" onchange="onAsmTargetChange()"><option value="">— 选择成品（如10张/包）—</option></select>
+    <div id="asmTargetInfo" style="font-size:12px;color:var(--brown-soft);margin-top:4px"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">每包张数 *</label><input class="form-input" id="asmCardsPerPack" type="number" min="1" value="10" oninput="calcAssembly()"></div>
+    <div class="form-group"><label class="form-label">分装包数 *</label><input class="form-input" id="asmPackCount" type="number" min="1" value="1" oninput="calcAssembly()"></div>
+  </div>
+  <div id="asmCalcResult" style="background:var(--cream);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.8"></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">日期</label><input class="form-input" id="asmDate" type="date"></div>
+    <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="asmNote" placeholder="选填"></div>
+  </div>
+  <div id="asmDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteAssembly()">🗑 删除此分装记录</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('assemblyModal')">取消</button><button class="btn btn-primary" onclick="saveAssembly()">保存分装</button></div>
+</div></div>
+
+<div class="modal-mask" id="purchaseModal"><div class="modal">
+  <div class="modal-header"><h2 id="purchaseModalTitle">新增采购</h2><button class="modal-close" onclick="closeModal('purchaseModal')">×</button></div>
+  <input type="hidden" id="purId">
+  <div class="form-group"><label class="form-label">采购类型</label>
+    <div class="preset-cat">
+      <button class="active" id="purTypeBtn-product" onclick="switchPurType('product')">📦 产品</button>
+      <button id="purTypeBtn-packaging" onclick="switchPurType('packaging')">📦 包材</button>
+    </div>
+  </div>
+  <div class="form-group"><label class="form-label">选择采购项 *</label>
+    <select class="form-select" id="purItem" onchange="onPurItemChange()"><option value="">— 请选择 —</option></select>
+    <div id="purItemInfo" style="font-size:12px;color:var(--brown-soft);margin-top:4px"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">采购数量 *</label><input class="form-input" id="purQty" type="number" min="1" placeholder="0" oninput="calcPurTotal()"></div>
+    <div class="form-group"><label class="form-label">单价(元) *</label><input class="form-input" id="purUnitCost" type="number" step="0.01" placeholder="0.00" oninput="calcPurTotal()"></div>
+  </div>
+  <div id="purCalcResult" style="background:var(--cream);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.8"></div>
+  <div class="form-group" id="purUpdateCostRow"><label class="form-label" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="purUpdateCost" checked style="width:16px;height:16px"> 更新产品成本为本次采购单价</label></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">供应商</label><select class="form-select" id="purSupplier"><option value="">— 无 —</option></select></div>
+    <div class="form-group"><label class="form-label">采购日期</label><input class="form-input" id="purDate" type="date"></div>
+  </div>
+  <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="purNote" placeholder="选填"></div>
+  <div id="purDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deletePurchase()">🗑 删除此采购记录</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('purchaseModal')">取消</button><button class="btn btn-primary" onclick="savePurchase()">保存采购</button></div>
+</div></div>
+
+<div class="modal-mask" id="bundleModal"><div class="modal">
+  <div class="modal-header"><h2 id="bundleModalTitle">新建套组</h2><button class="modal-close" onclick="closeModal('bundleModal')">×</button></div>
+  <input type="hidden" id="bdlId"><input type="hidden" id="bdlImgData"><input type="hidden" id="bdlImg2Data">
+  <div class="form-group"><label class="form-label">套组名称 *</label><input class="form-input" id="bdlName" placeholder="如：新手大礼包"></div>
+  <div class="form-group"><label class="form-label">所属分类</label><select class="form-select" id="bdlCategory"></select></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">套组主图</label><div class="img-upload img-upload-small" id="bdlImgUpload" onclick="document.getElementById('bdlImgFile').click()" style="height:80px"><span class="up-ico">🎁</span><span>上传主图</span></div><input type="file" id="bdlImgFile" accept="image/*" style="display:none" onchange="handleImgUpload(this,'bdlImgUpload','bdlImgData')"></div>
+    <div class="form-group"><label class="form-label">细节图</label><div class="img-upload img-upload-small" id="bdlImg2Upload" onclick="document.getElementById('bdlImg2File').click()" style="height:80px"><span class="up-ico">📷</span><span>上传细节图</span></div><input type="file" id="bdlImg2File" accept="image/*" style="display:none" onchange="handleImgUpload(this,'bdlImg2Upload','bdlImg2Data')"></div>
+  </div>
+  <div class="form-group"><label class="form-label">套组描述</label><textarea class="form-textarea" id="bdlDesc" placeholder="套组卖点、包含内容介绍..."></textarea></div>
+  <div style="border-top:1px solid var(--cream-deep);margin:12px 0;padding-top:12px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px">📦 套组内容</div>
+    <div class="form-row" style="align-items:flex-end">
+      <div class="form-group" style="flex:1"><label class="form-label">选择产品</label><select class="form-select" id="bdlItemPicker"><option value="">— 请选择 —</option></select></div>
+      <div class="form-group" style="width:70px"><label class="form-label">每套数量</label><input class="form-input" id="bdlItemQty" type="number" value="1" min="1"></div>
+      <button class="btn btn-primary btn-sm" onclick="addBundleItem()" style="height:38px;margin-bottom:0">＋ 添加</button>
+    </div>
+    <div id="bdlItemsList" style="margin-top:8px"></div>
+  </div>
+  <div style="background:var(--cream);border-radius:10px;padding:12px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--brown-soft)">套组总成本</span><b id="bdlCostVal" style="color:var(--blush-deep)">¥0.00</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--brown-soft)">可售套数</span><b id="bdlAvailVal" style="color:var(--seafoam-deep)">0 套</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--brown-soft)">建议售价(30%利润)</span><b id="bdlSuggestVal" style="color:var(--lavender-deep)">¥0.00</b></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">套组售价(元) *</label><input class="form-input" id="bdlPrice" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">安全库存(套)</label><input class="form-input" id="bdlSafetyStock" type="number" value="3"></div>
+  </div>
+  <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="bdlNote" placeholder="选填"></div>
+  <div id="bdlDeleteBox" style="display:none"><button class="btn btn-ghost btn-block" style="color:var(--blush-deep);margin-bottom:10px" onclick="deleteBundle()">🗑 删除此套组</button></div>
+  <div class="action-row"><button class="btn btn-ghost" onclick="closeModal('bundleModal')">取消</button><button class="btn btn-primary" onclick="saveBundle()">保存套组</button></div>
+</div></div>
+
+<div id="imgLightbox" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:20px" onclick="closeImgLightbox()">
+  <img id="imgLightboxImg" src="" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain" onclick="event.stopPropagation()">
+  <button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer" onclick="closeImgLightbox()">×</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="errorBox" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:#ff4444;color:#fff;padding:12px 16px;font-size:12px;line-height:1.5;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-all"></div>
+<button id="clearErrBtn" style="display:none;position:fixed;top:0;right:0;z-index:1000;background:rgba(0,0,0,.5);color:#fff;border:none;padding:6px 10px;font-size:16px" onclick="document.getElementById('errorBox').style.display='none';this.style.display='none'">×</button>
+
+<script>
+window.onerror=function(msg,url,line,col,err){
+  var box=document.getElementById('errorBox');
+  var btn=document.getElementById('clearErrBtn');
+  if(box){box.style.display='block';btn.style.display='block';box.textContent='JS错误: '+msg+'\n行:'+line+' 列:'+col+'\n'+(err&&err.stack?err.stack:'')}
+  console.error('JS错误:',msg,'行:'+line,'列:'+col,err);
+  return false;
+};
+</script>
+
+<script id="mainjs">
+// ========== 图片大图查看 ==========
+function showImgLightbox(src){if(!src)return;var lb=document.getElementById('imgLightbox');document.getElementById('imgLightboxImg').src=src;lb.style.display='flex'}
+function closeImgLightbox(){var lb=document.getElementById('imgLightbox');if(lb)lb.style.display='none'}
+
+// ========== 数据层 ==========
+var STORAGE_KEY='seafoam_v4';
+var state={
+  categories:[],products:[],packaging:[],commissions:[],suppliers:[],
+  expenses:[],sales:[],priceHistory:[],assemblies:[],purchases:[],bundles:[],
+  expenseTypes:['包材','推广','赠品','运费','其他'],
+  materialOptions:['铜版纸','白卡纸','牛皮纸','和纸','PVC贴纸','PET贴纸','珠光纸','其他'],
+  usageOptions:['手账装饰','贴纸收集','礼物包装','卡片收藏','书签','封口贴','其他'],
+  settings:{platformFee:5,skuCounter:0,bundleSkuCounter:0},
+  currentCategory:null,currentMoreTab:'expense',expenseType:'包材',
+  productView:'grid',saleDateFilter:''
+};
+var CAT_ICONS=['🐻','🐰','🐱','🐶','🐻‍❄️','🐼','🐨','🦊','🐹','🐸','🌟','🌸','🍰','🎀','📚','🎨'];
+var CAT_COLORS=[
+  {name:'seafoam',bg:'#E8FAF6',light:'#B8E8DE',deep:'#5BB8A5'},
+  {name:'pink',bg:'#FFF0F5',light:'#FFD6E0',deep:'#FF9EB5'},
+  {name:'blue',bg:'#F0F8FF',light:'#C8E6F5',deep:'#8EC9E8'},
+  {name:'yellow',bg:'#FFFCEB',light:'#FFF0B8',deep:'#FFD93D'},
+  {name:'lavender',bg:'#F5F0FA',light:'#E0D4F0',deep:'#B8A0D8'},
+  {name:'peach',bg:'#FFF5F0',light:'#FFE0CC',deep:'#FFB088'}
+];
+var selectedCatIcon='🐻',selectedCatColor=0;
+
+function loadState(){
+  try{
+    var s=localStorage.getItem(STORAGE_KEY);
+    if(s){
+      state=mergeState(state,JSON.parse(s));
+    } else {
+      var old=localStorage.getItem('seafoam_v3');
+      if(old){
+        var d=JSON.parse(old);
+        state.categories=d.categories||[];state.products=d.products||[];
+        state.packaging=d.packaging||[];state.commissions=d.commissions||[];
+        state.suppliers=d.suppliers||[];state.expenses=d.expenses||[];
+        state.sales=d.sales||[];state.settings=d.settings||{platformFee:5};
+        state.expenseTypes=d.expenseTypes||state.expenseTypes;
+        state.materialOptions=d.materialOptions||state.materialOptions;
+        state.usageOptions=d.usageOptions||state.usageOptions;
+      }
+    }
+    if(!state.categories)state.categories=[];
+    if(!state.priceHistory)state.priceHistory=[];
+    if(!state.settings)state.settings={platformFee:5,skuCounter:0};
+    if(state.categories.length===0){
+      var defId=uid();
+      state.categories.push({id:defId,name:'默认分类',icon:'📦',color:0,desc:'',image:'',isDefault:true});
+      state.products.forEach(function(p){if(!p.categoryId)p.categoryId=defId});
+    }
+  }catch(e){console.warn('load fail',e)}
+}
+function mergeState(def,loaded){
+  var r={};
+  for(var k in def){
+    if(typeof def[k]==='object'&&def[k]!==null&&!Array.isArray(def[k])){
+      r[k]=mergeState(def[k],loaded[k]||{});
+    } else if(Array.isArray(def[k])){
+      r[k]=loaded[k]||def[k];
+    } else {
+      r[k]=loaded[k]!==undefined?loaded[k]:def[k];
+    }
+  }
+  return r;
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({
+      categories:state.categories,products:state.products,packaging:state.packaging,
+      commissions:state.commissions,suppliers:state.suppliers,expenses:state.expenses,
+      sales:state.sales,priceHistory:state.priceHistory,assemblies:state.assemblies,purchases:state.purchases,bundles:state.bundles,expenseTypes:state.expenseTypes,
+      materialOptions:state.materialOptions,usageOptions:state.usageOptions,settings:state.settings
+    }));
+  }catch(e){toast('存储空间不足，建议减少大图')}
+}
+function migrateData(){
+  if(state.expenseTypes.length===3&&state.expenseTypes.indexOf('推广')>=0&&state.expenseTypes.indexOf('包材')<0){
+    state.expenseTypes=['包材','推广','赠品','运费','其他'];
+  }
+  if(state.expenseType==='推广'&&!state.expenseTypes.indexOf('包材'))state.expenseType='包材';
+  state.categories.forEach(function(c){if(c.name==='默认分类')c.isDefault=true});
+  state.products.forEach(function(p,i){
+    if(!p.sku)p.sku='SF-'+String(i+1).padStart(4,'0');
+    if(p.safetyStock===undefined)p.safetyStock=10;
+    if(!p.status)p.status=(p.stock||0)>0?'active':'out_of_stock';
+    if(!p.costBreakdown)p.costBreakdown={};
+    if(!p.image2)p.image2='';if(!p.material)p.material='';if(!p.usage)p.usage='';
+  });
+  state.settings.skuCounter=Math.max(state.settings.skuCounter||0,state.products.length);
+  state.commissions.forEach(function(c){if(!c.deadline)c.deadline='';if(c.completed===undefined)c.completed=false});
+  state.suppliers.forEach(function(s){if(!s.status)s.status='active';if(!s.paymentCycle)s.paymentCycle=''});
+  state.expenses.forEach(function(e){if(!e.productId)e.productId='';if(!e.image)e.image=''});
+  state.sales.forEach(function(s){if(!s.platform)s.platform='微店';if(!s.buyer)s.buyer=''});
+  if(!state.assemblies)state.assemblies=[];
+  state.assemblies.forEach(function(a){if(!a.date)a.date=new Date().toISOString().slice(0,10);if(!a.note)a.note=''});
+  if(!state.purchases)state.purchases=[];
+  state.purchases.forEach(function(p){if(!p.supplierId)p.supplierId='';if(!p.note)p.note='';if(!p.itemType)p.itemType='product'});
+  if(!state.bundles)state.bundles=[];
+  if(!state.settings.bundleSkuCounter)state.settings.bundleSkuCounter=state.bundles.length;
+  state.bundles.forEach(function(b,i){if(!b.sku)b.sku='BF-'+String(i+1).padStart(4,'0');if(!b.status)b.status='active';if(b.safetyStock===undefined)b.safetyStock=3;if(!b.items)b.items=[];if(!b.createdAt)b.createdAt=todayStr()});
+  state.sales.forEach(function(s){if(!s.itemType)s.itemType='product';if(!s.bundleId)s.bundleId='';if(!s.bundleName)s.bundleName=''});
+}
+
+// ========== 工具 ==========
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},1500)}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmt(n){return '¥'+(Math.round(n*100)/100).toFixed(2)}
+function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function getCatColor(cat){return CAT_COLORS[cat.color||0]||CAT_COLORS[0]}
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function daysUntil(ds){if(!ds)return null;var t=new Date(ds),n=new Date();n.setHours(0,0,0,0);t.setHours(0,0,0,0);return Math.round((t-n)/(864e5))}
+function deadlineText(ds){if(!ds)return'';var d=daysUntil(ds);if(d===null)return'';if(d===0)return'今天交稿';if(d===1)return'明天交稿';if(d>0)return'还剩'+d+'天';if(d===-1)return'昨天逾期';return'逾期'+Math.abs(d)+'天'}
+function genSKU(){if(!state.settings.skuCounter)state.settings.skuCounter=0;state.settings.skuCounter++;return 'SF-'+String(state.settings.skuCounter).padStart(4,'0')}
+function getProductStats(pid){
+  var ss=state.sales.filter(function(s){return s.productId===pid});
+  return{totalSold:ss.reduce(function(s,x){return s+(x.quantity||0)},0),totalProfit:ss.reduce(function(s,x){return s+(x.profit||0)},0)};
+}
+
+// ========== 页面切换 ==========
+var pageMap={home:'page-home',products:'page-products',sales:'page-sales',calc:'page-calc',more:'page-more'};
+var currentPage='home';
+function goPage(p){
+  currentPage=p;
+  document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active')});
+  document.getElementById(pageMap[p]).classList.add('active');
+  var tabs=['home','products','sales','calc','more'];
+  document.querySelectorAll('.tabbar button').forEach(function(b,i){b.classList.toggle('active',tabs[i]===p)});
+  var fab=document.getElementById('fabBtn');
+  if(p==='products'){fab.style.display='flex';showCategoryList()}
+  else if(p==='sales'){fab.style.display='flex'}
+  else if(p==='more'){fab.style.display=(state.currentMoreTab==='export')?'none':'flex'}
+  else{fab.style.display='none'}
+  window.scrollTo(0,0);
+  if(p==='home')renderHome();
+  if(p==='products')renderCategoryList();
+  if(p==='sales')renderSales();
+  if(p==='calc')initCalc();
+  if(p==='more')renderMore();
+}
+function fabAction(){
+  if(currentPage==='products'){if(state.currentCategory)openProductModal();else openCategoryModal()}
+  else if(currentPage==='sales')openSaleModal();
+  else if(currentPage==='more'){
+    var t=state.currentMoreTab;
+    if(t==='expense')openExpenseModal();
+    else if(t==='commission')openCommissionModal();
+    else if(t==='packaging')openPkgModal();
+    else if(t==='supplier')openSupplierModal();
+    else if(t==='assembly')openAssemblyModal();
+    else if(t==='purchase')openPurchaseModal();
+    else if(t==='bundle')openBundleModal();
+  }
+}
+function switchMoreTab(tab){
+  state.currentMoreTab=tab;
+  ['expense','commission','packaging','supplier','assembly','purchase','bundle','export'].forEach(function(t){
+    var el=document.getElementById('more-'+t);if(el)el.style.display=t===tab?'block':'none';
+    var btn=document.getElementById('mtab-'+t);if(btn)btn.classList.toggle('active',t===tab);
+  });
+  var fab=document.getElementById('fabBtn');if(fab)fab.style.display=(tab==='export')?'none':'flex';
+  renderMore();}
+function renderMore(){
+  var t=state.currentMoreTab;
+  if(t==='expense')renderExpenses();
+  else if(t==='commission')renderCommissions();
+  else if(t==='packaging')renderPkg();
+  else if(t==='supplier')renderSuppliers();
+  else if(t==='assembly')renderAssembly();
+  else if(t==='purchase')renderPurchases();
+  else if(t==='bundle')renderBundles();
+  else if(t==='export')populateExportMonths();
+}
+
+// ========== 首页：经营驾驶舱 ==========
+function renderHome(){
+  var ps=state.products,td=todayStr(),mp=td.slice(0,7);
+  document.getElementById('dashProductCount').textContent=ps.length;
+  document.getElementById('dashTotalStock').textContent='总库存 '+ps.reduce(function(s,p){return s+(p.stock||0)},0);
+  var commTotal=state.commissions.reduce(function(s,c){return s+(c.amount||0)},0);
+  document.getElementById('dashCommCost').textContent='¥'+commTotal.toFixed(0);
+  document.getElementById('dashCommCount').textContent=state.commissions.length+' 笔约稿';
+  // 今日实时
+  var ts=state.sales.filter(function(s){return s.date===td});
+  var tRev=ts.reduce(function(s,x){return s+(x.revenue||0)},0);
+  var tProf=ts.reduce(function(s,x){return s+(x.profit||0)},0);
+  var tRate=tRev>0?(tProf/tRev*100):0;
+  document.getElementById('dashTodayRev').textContent='¥'+tRev.toFixed(0);
+  document.getElementById('dashTodayProfit').textContent='¥'+tProf.toFixed(0);
+  document.getElementById('dashTodayRate').textContent=tRate.toFixed(0)+'%';
+  // 本月累计
+  var ms=state.sales.filter(function(s){return s.date&&s.date.indexOf(mp)===0});
+  var mRev=ms.reduce(function(s,x){return s+(x.revenue||0)},0);
+  var me=state.expenses.filter(function(e){return e.date&&e.date.indexOf(mp)===0});
+  var mComm=state.commissions.filter(function(c){return c.date&&c.date.indexOf(mp)===0}).reduce(function(s,c){return s+(c.amount||0)},0);
+  var mPkg=state.packaging.reduce(function(s,p){return s+(p.totalCost||0)},0);
+  var mPromo=me.filter(function(e){return e.type==='推广'}).reduce(function(s,e){return s+e.amount},0);
+  var mGift=me.filter(function(e){return e.type==='赠品'}).reduce(function(s,e){return s+e.amount},0);
+  var mOtherExp=me.filter(function(e){return e.type!=='推广'&&e.type!=='赠品'}).reduce(function(s,e){return s+e.amount},0);
+  var mPur=(state.purchases||[]).filter(function(p){return p.date&&p.date.indexOf(mp)===0}).reduce(function(s,p){return s+(p.totalCost||0)},0);
+  var mTotalExp=mComm+mPkg+mPromo+mGift+mOtherExp+mPur;
+  var mNet=mRev-mTotalExp;
+  document.getElementById('dashMonthRev').textContent='¥'+mRev.toFixed(0);
+  document.getElementById('dashMonthExpense').textContent='¥'+mTotalExp.toFixed(0);
+  document.getElementById('dashExpenseDetail').innerHTML=
+    '<div class="dash-expense-detail">├ 约稿费 ¥'+mComm.toFixed(0)+'</div>'+
+    '<div class="dash-expense-detail">├ 包材 ¥'+mPkg.toFixed(0)+'</div>'+
+    '<div class="dash-expense-detail">├ 推广 ¥'+mPromo.toFixed(0)+'</div>'+
+    '<div class="dash-expense-detail">├ 赠品 ¥'+mGift.toFixed(0)+'</div>'+
+    (mPur>0?'<div class="dash-expense-detail">├ 采购进货 ¥'+mPur.toFixed(0)+'</div>':'')+
+    (mOtherExp>0?'<div class="dash-expense-detail">├ 其他 ¥'+mOtherExp.toFixed(0)+'</div>':'');
+  var netEl=document.getElementById('dashMonthNet');
+  netEl.textContent=(mNet>=0?'+':'')+'¥'+mNet.toFixed(0);
+  netEl.style.color=mNet>=0?'var(--seafoam-deep)':'var(--blush-deep)';
+  // 热销Top3
+  var ps2={};
+  ms.forEach(function(s){var key=s.itemType==='bundle'?('B:'+s.bundleId):('P:'+(s.productId||''));if(!ps2[key])ps2[key]={qty:0,rev:0,isBundle:s.itemType==='bundle',id:s.itemType==='bundle'?s.bundleId:s.productId};ps2[key].qty+=(s.quantity||0);ps2[key].rev+=(s.revenue||0)});
+  var top3=Object.keys(ps2).map(function(k){return ps2[k]}).sort(function(a,b){return b.qty-a.qty}).slice(0,3);
+  var t3h='';
+  if(top3.length===0){t3h='<p style="font-size:12px;color:var(--brown-light);text-align:center;padding:8px">本月暂无销售数据</p>'}
+  else{
+    var rc=['#FFD93D','#C0C0C0','#CD7F32'];
+    top3.forEach(function(t,i){
+      var nm,im;
+      if(t.isBundle){var b=state.bundles.find(function(x){return x.id===t.id});nm=b?b.name:'已删除套组';im=b&&b.image?'<img src="'+b.image+'" style="width:32px;height:32px;border-radius:6px;object-fit:cover">':'<div style="width:32px;height:32px;border-radius:6px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center;font-size:14px">🎁</div>'}
+      else{var p=state.products.find(function(x){return x.id===t.id});nm=p?p.name:'已删除';im=p&&p.image?'<img src="'+p.image+'" style="width:32px;height:32px;border-radius:6px;object-fit:cover">':'<div style="width:32px;height:32px;border-radius:6px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center;font-size:14px">📦</div>'}
+      t3h+='<div class="dash-top-item"><div class="dash-top-rank" style="background:'+(rc[i]||'#B8A595')+'">'+(i+1)+'</div>'+im+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(t.isBundle?'🎁 ':'')+esc(nm)+'</div><div style="font-size:11px;color:var(--brown-light)">售出'+t.qty+'件 · ¥'+t.rev.toFixed(0)+'</div></div></div>';
+    });
+  }
+  document.getElementById('dashTop3').innerHTML=t3h;
+  // 预警区
+  var ah='';
+  var sw=ps.filter(function(p){return p.status!=='inactive'&&(p.stock||0)<=(p.safetyStock||10)}).sort(function(a,b){return(a.stock||0)-(b.stock||0)});
+  if(sw.length>0){
+    ah+='<div style="font-size:12px;font-weight:600;color:var(--blush-deep);margin-bottom:6px">📦 库存预警 ('+sw.length+')</div>';
+    ah+=sw.slice(0,3).map(function(p){
+      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="editProduct(\''+p.id+'\')"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+'</span><span class="status-badge '+(p.stock<=0?'status-out_of_stock':'status-active')+'">'+(p.stock<=0?'缺货':'剩'+p.stock)+'</span></div>';
+    }).join('');
+  }
+  var ca=state.commissions.filter(function(c){if(c.completed)return false;if(!c.deadline)return false;var d=daysUntil(c.deadline);return d!==null&&d<=3});
+  if(ca.length>0){
+    ah+='<div style="font-size:12px;font-weight:600;color:var(--yellow-deep);margin:8px 0 6px">🎨 约稿提醒 ('+ca.length+')</div>';
+    ah+=ca.map(function(c){
+      var d=daysUntil(c.deadline);var col=d<0?'var(--blush-deep)':d<=1?'var(--blush-deep)':'var(--yellow-deep)';
+      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="editCommission(\''+c.id+'\')"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.artist)+'</span><span style="color:'+col+';font-weight:600">'+deadlineText(c.deadline)+'</span></div>';
+    }).join('');
+  }
+  var ba=(state.bundles||[]).filter(function(b){return getBundleAvailStock(b)<=(b.safetyStock||3)});
+  if(ba.length>0){
+    ah+='<div style="font-size:12px;font-weight:600;color:var(--lavender-deep);margin:8px 0 6px">🎁 套组预警 ('+ba.length+')</div>';
+    ah+=ba.slice(0,3).map(function(b){var avail=getBundleAvailStock(b);return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="goPage(\'more\');setTimeout(function(){switchMoreTab(\'bundle\')},100)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.name)+'</span><span class="status-badge '+(avail<=0?'status-out_of_stock':'status-active')+'">'+(avail<=0?'缺货':'剩'+avail+'套')+'</span></div>'}).join('');
+  }
+  if(sw.length===0&&ca.length===0&&ba.length===0)ah='<p style="font-size:12px;color:var(--brown-light);text-align:center;padding:8px">一切正常，暂无预警~ 🐻</p>';
+  document.getElementById('dashAlerts').innerHTML=ah;
+}
+
+// ========== 分类管理 ==========
+function renderCategoryList(){
+  var g=document.getElementById('categoryGrid');
+  if(state.categories.length===0){g.innerHTML='<div class="empty" style="grid-column:1/-1"><span class="emoji">📦</span>还没有分类<br>点击右下角＋创建</div>';return}
+  var h=state.categories.map(function(cat){
+    var ps=state.products.filter(function(p){return p.categoryId===cat.id});
+    var ts=ps.reduce(function(s,p){return s+(p.stock||0)},0);
+    var tc=ps.reduce(function(s,p){return s+(p.cost||0)*(p.stock||0)},0);
+    var tp=ps.reduce(function(s,p){return s+((p.price||0)-(p.cost||0))*(p.stock||0)},0);
+    var col=getCatColor(cat);
+    var im=cat.image?'<img src="'+cat.image+'">':'<span class="cat-icon-bg">'+(cat.icon||'📦')+'</span>';
+    var eb='<button onclick="event.stopPropagation();editCategory(\''+cat.id+'\')" title="编辑">✏️</button>'+(cat.isDefault?'':'<button onclick="event.stopPropagation();deleteCategoryById(\''+cat.id+'\')" title="删除" style="color:var(--blush-deep)">🗑</button>');
+    return '<div class="category-card" onclick="enterCategory(\''+cat.id+'\')" style="background:linear-gradient(135deg,'+col.bg+','+col.light+')"><div class="cat-card-actions">'+eb+'</div><div class="cat-card-img">'+im+'</div><div class="cat-card-top"><div class="cat-name">'+esc(cat.name)+(cat.isDefault?'':'')+'</div></div><div class="cat-card-body"><div class="cat-stat"><span>产品数</span><b>'+ps.length+'</b></div><div class="cat-stat"><span>总库存</span><b>'+ts+'</b></div><div class="cat-stat"><span>成本</span><b>¥'+tc.toFixed(0)+'</b></div><div class="cat-stat"><span>预估利润</span><b style="color:'+col.deep+'">¥'+tp.toFixed(0)+'</b></div></div></div>';
+  }).join('');
+  h+='<div class="cat-add-card" onclick="openCategoryModal()"><span class="plus">＋</span><span>新建分类</span></div>';
+  g.innerHTML=h;
+}
+function showCategoryList(){state.currentCategory=null;document.getElementById('catListView').style.display='block';document.getElementById('catDetailView').style.display='none';renderCategoryList()}
+function enterCategory(id){
+  state.currentCategory=id;
+  var cat=state.categories.find(function(c){return c.id===id});if(!cat)return;
+  document.getElementById('catListView').style.display='none';
+  document.getElementById('catDetailView').style.display='block';
+  document.getElementById('catDetailTitle').textContent=(cat.icon||'📦')+' '+cat.name;
+  document.getElementById('catDetailSubtitle').textContent=cat.name+' · 产品列表';
+  renderProducts();
+}
+function renderCatIconPresets(sel){document.getElementById('catIconPresets').innerHTML=CAT_ICONS.map(function(i){return'<button class="'+(sel===i?'active':'')+'" onclick="selectedCatIcon=\''+i+'\';renderCatIconPresets(\''+i+'\')">'+i+'</button>'}).join('')}
+function renderCatColorPresets(sel){document.getElementById('catColorPresets').innerHTML=CAT_COLORS.map(function(c,i){return'<button class="'+(sel===i?'active':'')+'" onclick="selectedCatColor='+i+';renderCatColorPresets('+i+')" style="background:'+c.light+';border-color:'+c.deep+'">'+c.name+'</button>'}).join('')}
+function openCategoryModal(id){
+  var cat=id?state.categories.find(function(c){return c.id===id}):null;
+  var isDef=cat&&cat.isDefault;
+  document.getElementById('catId').value=id||'';
+  document.getElementById('categoryModalTitle').textContent=id?'编辑分类':'新建分类';
+  cat=cat||{};
+  document.getElementById('catName').value=cat.name||'';
+  document.getElementById('catDesc').value=cat.desc||'';
+  document.getElementById('catImgData').value=cat.image||'';
+  setImgDisplay(cat.image||'','catImgUpload','🖼','上传图片');
+  selectedCatIcon=cat.icon||'📦';selectedCatColor=cat.color||0;
+  renderCatIconPresets(selectedCatIcon);renderCatColorPresets(selectedCatColor);
+  document.getElementById('catDefaultNotice').style.display=isDef?'block':'none';
+  document.getElementById('catDeleteBox').style.display=(id&&!isDef)?'block':'none';
+  document.getElementById('categoryModal').classList.add('show');
+}
+function editCategory(id){openCategoryModal(id)}
+function saveCategory(){
+  var id=document.getElementById('catId').value;
+  var cat=id?state.categories.find(function(c){return c.id===id}):null;
+  var wasDefault=cat&&cat.isDefault;
+  var name=document.getElementById('catName').value.trim();
+  if(!name){toast('请填写分类名称');return}
+  var data={id:id||uid(),name:name,icon:selectedCatIcon,color:selectedCatColor,desc:document.getElementById('catDesc').value.trim(),image:document.getElementById('catImgData').value,isDefault:wasDefault||false};
+  var idx=state.categories.findIndex(function(c){return c.id===data.id});
+  if(idx>=0)state.categories[idx]=data;else state.categories.push(data);
+  saveState();closeModal('categoryModal');toast('保存成功~ 🐻');renderCategoryList();
+}
+function deleteCategory(){
+  var id=document.getElementById('catId').value;if(!id)return;
+  doDeleteCategory(id);
+}
+function deleteCategoryById(id){
+  if(!id)return;
+  doDeleteCategory(id);
+}
+function doDeleteCategory(id){
+  var cat=state.categories.find(function(c){return c.id===id});
+  if(cat&&cat.isDefault){toast('默认分类不可删除');return}
+  var ps=state.products.filter(function(p){return p.categoryId===id});
+  if(ps.length>0){
+    if(!confirm('此分类下有 '+ps.length+' 个产品，删除后产品将归入默认分类。确认删除？'))return;
+    var def=state.categories.find(function(c){return c.isDefault||c.name==='默认分类'});
+    var tid=def?def.id:state.categories[0].id;
+    if(tid===id){toast('无法删除唯一的分类');return}
+    ps.forEach(function(p){p.categoryId=tid});
+  } else {if(!confirm('确定删除此分类吗？'))return}
+  state.categories=state.categories.filter(function(c){return c.id!==id});
+  saveState();closeModal('categoryModal');toast('已删除');renderCategoryList();
+}
+
+// ========== 产品管理 ==========
+function setProductView(v){state.productView=v;document.getElementById('viewGridBtn').classList.toggle('active',v==='grid');document.getElementById('viewListBtn').classList.toggle('active',v==='list');renderProducts()}
+function renderProducts(){
+  var c=document.getElementById('productContainer');
+  var list=state.products.filter(function(p){return p.categoryId===state.currentCategory});
+  if(list.length===0){c.innerHTML='<div class="empty"><span class="emoji">📦</span>此分类下还没有产品<br>点击右下角＋添加</div>';return}
+  if(state.productView==='list')c.innerHTML='<div class="product-list">'+list.map(renderProductListItem).join('')+'</div>';
+  else c.innerHTML='<div class="product-grid">'+list.map(renderProductCardItem).join('')+'</div>';
+}
+function renderProductCardItem(p){
+  var st=getProductStats(p.id),pr=(p.price||0)-(p.cost||0),prR=p.price>0?Math.round(pr/p.price*100):0;
+  var sup=p.supplierId?state.suppliers.find(function(s){return s.id===p.supplierId}):null;
+  var im=p.image?'<img src="'+p.image+'" onclick="event.stopPropagation();showImgLightbox(\''+p.image+'\')" style="cursor:pointer">':'<span class="placeholder">📦</span>';
+  var i2=p.image2?'<span class="img2-badge" onclick="event.stopPropagation();showImgLightbox(\''+p.image2+'\')" style="cursor:pointer">📎</span>':'';
+  var sb=p.status==='inactive'?'<span class="status-badge status-inactive">下架</span>':(p.stock||0)<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'';
+  var sw=(p.stock||0)<=(p.safetyStock||10)&&p.status!=='inactive'?'<span class="stock-warn">'+(p.stock<=0?'缺货':'低')+'</span>':'';
+  var mt=p.material?'<span class="tag tag-blue">'+esc(p.material)+'</span>':'';
+  var ut=p.usage?'<span class="tag tag-lavender">'+esc(p.usage)+'</span>':'';
+  return'<div class="product-card" onclick="editProduct(\''+p.id+'\')"><div class="product-img">'+im+i2+sw+'</div><div class="product-info"><div class="name">'+esc(p.name)+sb+'<span class="sku-text">'+esc(p.sku||'')+'</span></div><div class="spec">'+esc(p.size||'')+(p.quantity?' · '+esc(p.quantity)+'张':'')+'</div>'+(mt||ut?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">'+mt+ut+'</div>':'')+(sup?'<div class="supplier">🏪 '+esc(sup.name)+'</div>':'')+'<div class="price-row"><span class="cost">成本¥'+(p.cost||0).toFixed(2)+'</span><span class="sell">¥'+(p.price||0).toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">库存'+(p.stock||0)+' · 售'+st.totalSold+'</span><span style="font-size:10px;color:'+(pr>0?'var(--seafoam-deep)':'var(--blush-deep)')+'">赚¥'+pr.toFixed(2)+'</span></div></div></div>';
+}
+function renderProductListItem(p){
+  var st=getProductStats(p.id),pr=(p.price||0)-(p.cost||0),prR=p.price>0?Math.round(pr/p.price*100):0;
+  var sup=p.supplierId?state.suppliers.find(function(s){return s.id===p.supplierId}):null;
+  var im=p.image?'<img src="'+p.image+'" onclick="event.stopPropagation();showImgLightbox(\''+p.image+'\')" style="cursor:pointer">':'<span class="placeholder">📦</span>';
+  var i2=p.image2?'<span class="img2-badge" onclick="event.stopPropagation();showImgLightbox(\''+p.image2+'\')" style="cursor:pointer">📎</span>':'';
+  var sb=p.status==='inactive'?'<span class="status-badge status-inactive">下架</span>':(p.stock||0)<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'';
+  var mt=p.material?'<span class="tag tag-blue">'+esc(p.material)+'</span>':'';
+  var ut=p.usage?'<span class="tag tag-lavender">'+esc(p.usage)+'</span>':'';
+  return'<div class="product-card" onclick="editProduct(\''+p.id+'\')"><div class="product-img">'+im+i2+'</div><div class="product-info"><div class="name">'+esc(p.name)+sb+'<span class="sku-text">'+esc(p.sku||'')+'</span></div><div class="spec">'+esc(p.size||'')+(p.quantity?' · '+esc(p.quantity)+'张':'')+(sup?' · 🏪'+esc(sup.name):'')+'</div>'+(mt||ut?'<div class="meta-tags">'+mt+ut+'</div>':'')+'<div class="price-row"><span class="cost">成本¥'+(p.cost||0).toFixed(2)+'</span><span class="sell">¥'+(p.price||0).toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">库存'+(p.stock||0)+' · 售'+st.totalSold+'</span><span style="font-size:10px;color:'+(pr>0?'var(--seafoam-deep)':'var(--blush-deep)')+'">赚¥'+pr.toFixed(2)+'</span></div></div></div>';
+}
+function populateProductCategories(sel){document.getElementById('prodCategory').innerHTML=state.categories.map(function(c){return'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+(c.icon||'📦')+' '+esc(c.name)+'</option>'}).join('')}
+function populateProductSuppliers(sel){document.getElementById('prodSupplier').innerHTML='<option value="">— 无/自制 —</option>'+state.suppliers.map(function(s){return'<option value="'+s.id+'"'+(sel===s.id?' selected':'')+'>'+esc(s.name)+'</option>'}).join('')}
+function populateMaterialOptions(sel){document.getElementById('prodMaterial').innerHTML='<option value="">— 请选择 —</option>'+state.materialOptions.map(function(m){return'<option value="'+esc(m)+'"'+(sel===m?' selected':'')+'>'+esc(m)+'</option>'}).join('')+'<option value="__custom__"'+(sel==='__custom__'?' selected':'')+'>＋ 自定义...</option>';document.getElementById('customMaterialRow').style.display=(sel==='__custom__')?'block':'none'}
+function populateUsageOptions(sel){document.getElementById('prodUsage').innerHTML='<option value="">— 请选择 —</option>'+state.usageOptions.map(function(u){return'<option value="'+esc(u)+'"'+(sel===u?' selected':'')+'>'+esc(u)+'</option>'}).join('')+'<option value="__custom__"'+(sel==='__custom__'?' selected':'')+'>＋ 自定义...</option>';document.getElementById('customUsageRow').style.display=(sel==='__custom__')?'block':'none'}
+function onMaterialChange(){document.getElementById('customMaterialRow').style.display=(document.getElementById('prodMaterial').value==='__custom__')?'block':'none'}
+function onUsageChange(){document.getElementById('customUsageRow').style.display=(document.getElementById('prodUsage').value==='__custom__')?'block':'none'}
+function addCustomMaterial(){var v=document.getElementById('customMaterial').value.trim();if(!v){toast('请输入材质名称');return}if(state.materialOptions.indexOf(v)>=0){toast('该材质已存在');return}state.materialOptions.push(v);saveState();populateMaterialOptions(v);toast('已添加材质: '+v)}
+function addCustomUsage(){var v=document.getElementById('customUsage').value.trim();if(!v){toast('请输入用途名称');return}if(state.usageOptions.indexOf(v)>=0){toast('该用途已存在');return}state.usageOptions.push(v);saveState();populateUsageOptions(v);toast('已添加用途: '+v)}
+function toggleCostBreakdown(){var s=document.getElementById('costBreakdownSection'),a=document.getElementById('costBreakdownArrow');if(s.style.display==='none'){s.style.display='block';a.textContent='▼'}else{s.style.display='none';a.textContent='▶'}}
+function sumCostBreakdown(){var t=(parseFloat(document.getElementById('cbRaw').value)||0)+(parseFloat(document.getElementById('cbProcessing').value)||0)+(parseFloat(document.getElementById('cbPackaging').value)||0)+(parseFloat(document.getElementById('cbCommission').value)||0)+(parseFloat(document.getElementById('cbPromo').value)||0)+(parseFloat(document.getElementById('cbOther').value)||0);document.getElementById('cbTotal').textContent='¥'+t.toFixed(2)}
+function applyCostBreakdown(){sumCostBreakdown();var t=parseFloat(document.getElementById('cbTotal').textContent.replace('¥',''));document.getElementById('prodCost').value=t.toFixed(2);toast('已汇总成本¥'+t.toFixed(2))}
+function openProductModal(id){
+  document.getElementById('prodId').value=id||'';
+  document.getElementById('productModalTitle').textContent=id?'编辑产品':'新增产品';
+  var p=id?state.products.find(function(x){return x.id===id}):null;
+  if(!p)p={};
+  populateProductCategories(p.categoryId||state.currentCategory||'');
+  populateProductSuppliers(p.supplierId||'');
+  populateMaterialOptions(p.material||'');
+  populateUsageOptions(p.usage||'');
+  document.getElementById('prodSKU').value=p.sku||'（保存时自动生成）';
+  document.getElementById('prodName').value=p.name||'';
+  document.getElementById('prodSize').value=p.size||'';
+  document.getElementById('prodQty').value=p.quantity||'';
+  document.getElementById('prodCost').value=p.cost||'';
+  document.getElementById('prodPrice').value=p.price||'';
+  document.getElementById('prodStock').value=p.stock||'';
+  document.getElementById('prodSafetyStock').value=p.safetyStock||10;
+  document.getElementById('prodStatus').value=p.status||'active';
+  document.getElementById('prodNote').value=p.note||'';
+  document.getElementById('prodImgData').value=p.image||'';
+  document.getElementById('prodImg2Data').value=p.image2||'';
+  document.getElementById('prodImgUrl').value=(p.image&&p.image.indexOf('http')===0)?p.image:'';
+  setImgDisplay(p.image||'','prodImgUpload','📷','主图');
+  setImgDisplay(p.image2||'','prodImg2Upload','📷','细节图');
+  var cb=p.costBreakdown||{};
+  document.getElementById('cbRaw').value=cb.raw||'';document.getElementById('cbProcessing').value=cb.processing||'';
+  document.getElementById('cbPackaging').value=cb.packaging||'';document.getElementById('cbCommission').value=cb.commission||'';
+  document.getElementById('cbPromo').value=cb.promo||'';document.getElementById('cbOther').value=cb.other||'';
+  sumCostBreakdown();
+  document.getElementById('costBreakdownSection').style.display='none';
+  document.getElementById('costBreakdownArrow').textContent='▶';
+  var st=getProductStats(id||'');
+  document.getElementById('prodTotalSold').textContent=st.totalSold+' 件';
+  document.getElementById('prodTotalProfit').textContent='¥'+st.totalProfit.toFixed(2);
+  document.getElementById('prodDeleteBox').style.display=id?'block':'none';
+  document.getElementById('productModal').classList.add('show');
+}
+function editProduct(id){openProductModal(id)}
+function saveProduct(){
+  var name=document.getElementById('prodName').value.trim();
+  if(!name){toast('请填写产品名称');return}
+  var id=document.getElementById('prodId').value;
+  var existing=id?state.products.find(function(x){return x.id===id}):null;
+  var sku=existing?existing.sku:genSKU();
+  var stock=parseInt(document.getElementById('prodStock').value)||0;
+  var status=document.getElementById('prodStatus').value;
+  if(stock<=0)status='out_of_stock';else if(status==='out_of_stock')status='active';
+  var mat=document.getElementById('prodMaterial').value;
+  if(mat==='__custom__')mat=document.getElementById('customMaterial').value.trim()||'';
+  var usg=document.getElementById('prodUsage').value;
+  if(usg==='__custom__')usg=document.getElementById('customUsage').value.trim()||'';
+  var imgData=document.getElementById('prodImgData').value;
+  var img2Data=document.getElementById('prodImg2Data').value;
+  var imgUrl=document.getElementById('prodImgUrl').value.trim();
+  var data={
+    id:id||uid(),sku:sku,name:name,categoryId:document.getElementById('prodCategory').value,
+    supplierId:document.getElementById('prodSupplier').value,
+    size:document.getElementById('prodSize').value.trim(),quantity:document.getElementById('prodQty').value.trim(),
+    material:mat,usage:usg,cost:parseFloat(document.getElementById('prodCost').value)||0,
+    price:parseFloat(document.getElementById('prodPrice').value)||0,stock:stock,
+    safetyStock:parseInt(document.getElementById('prodSafetyStock').value)||10,
+    status:status,note:document.getElementById('prodNote').value.trim(),
+    image:imgData||imgUrl||'',image2:img2Data,
+    costBreakdown:{raw:parseFloat(document.getElementById('cbRaw').value)||0,processing:parseFloat(document.getElementById('cbProcessing').value)||0,packaging:parseFloat(document.getElementById('cbPackaging').value)||0,commission:parseFloat(document.getElementById('cbCommission').value)||0,promo:parseFloat(document.getElementById('cbPromo').value)||0,other:parseFloat(document.getElementById('cbOther').value)||0}
+  };
+  var idx=state.products.findIndex(function(x){return x.id===data.id});
+  if(idx>=0)state.products[idx]=data;else state.products.push(data);
+  saveState();closeModal('productModal');toast('保存成功~ 🐻');renderProducts();
+}
+function deleteProduct(){var id=document.getElementById('prodId').value;if(!id)return;if(!confirm('确定删除这个产品吗？'))return;state.products=state.products.filter(function(p){return p.id!==id});saveState();closeModal('productModal');renderProducts();toast('已删除')}
+
+// ========== 销售管理 ==========
+function renderSales(){
+  var td=todayStr();
+  var ts=state.sales.filter(function(s){return s.date===td});
+  document.getElementById('saleTodayRev').textContent='¥'+ts.reduce(function(s,x){return s+(x.revenue||0)},0).toFixed(0);
+  document.getElementById('saleTodayCount').textContent=ts.length+' 笔';
+  document.getElementById('saleTodayProfit').textContent='¥'+ts.reduce(function(s,x){return s+(x.profit||0)},0).toFixed(0);
+  document.getElementById('saleTodayQty').textContent=ts.reduce(function(s,x){return s+(x.quantity||0)},0)+' 件';
+  document.getElementById('saleTotalRev').textContent='¥'+state.sales.reduce(function(s,x){return s+(x.revenue||0)},0).toFixed(0);
+  document.getElementById('saleTotalCount').textContent=state.sales.length+' 笔';
+  document.getElementById('saleTotalProfit').textContent='¥'+state.sales.reduce(function(s,x){return s+(x.profit||0)},0).toFixed(0);
+  document.getElementById('saleTotalQty').textContent=state.sales.reduce(function(s,x){return s+(x.quantity||0)},0)+' 件';
+  var dates=[...new Set(state.sales.map(function(s){return s.date}))].sort().reverse();
+  var fh='<button class="chip '+(state.saleDateFilter===''?'active':'')+'" onclick="filterSales(\'\')">全部</button>';
+  fh+=dates.slice(0,14).map(function(d){return'<button class="chip '+(state.saleDateFilter===d?'active':'')+'" onclick="filterSales(\''+d+'\')">'+d.slice(5)+'</button>'}).join('');
+  document.getElementById('saleDateFilter').innerHTML=fh;
+  var list=document.getElementById('saleList');
+  var filtered=state.saleDateFilter?state.sales.filter(function(s){return s.date===state.saleDateFilter}):state.sales;
+  if(filtered.length===0){list.innerHTML='<div class="empty"><span class="emoji">🛒</span>还没有销售记录<br>点击右下角＋记录第一笔</div>';return}
+  list.innerHTML=[...filtered].sort(function(a,b){return(b.date||'').localeCompare(a.date||'')}).map(function(s){
+    var isBundle=s.itemType==='bundle';
+    var p=isBundle?null:state.products.find(function(x){return x.id===s.productId});
+    var b=isBundle?state.bundles.find(function(x){return x.id===s.bundleId}):null;
+    var displayName=isBundle?(s.bundleName||'套组'):(p?p.name:'已删除产品');
+    var thumbImg=isBundle?(b&&b.image):(p&&p.image);
+    var icon=isBundle?'🎁':'🛒';
+    var pc=s.profit>=0?'var(--seafoam-deep)':'var(--blush-deep)';
+    return'<div class="sale-item" onclick="editSale(\''+s.id+'\')"><div class="sale-thumb">'+(thumbImg?'<img src="'+thumbImg+'">':'<span class="ph">'+icon+'</span>')+'</div><div class="sale-info"><div class="sname">'+(isBundle?'🎁 ':'')+esc(displayName)+'</div><div class="smeta">'+esc(s.date)+' · ×'+s.quantity+' · ¥'+(s.price||0).toFixed(2)+'/件'+(s.platform?' · '+esc(s.platform):'')+(s.buyer?' · '+esc(s.buyer):'')+'</div></div><div class="sale-qty">¥'+(s.revenue||0).toFixed(2)+'<div style="font-size:10px;color:'+pc+'">'+(s.profit>=0?'+':'')+'¥'+(s.profit||0).toFixed(2)+'</div></div></div>';
+  }).join('');
+}
+function filterSales(d){state.saleDateFilter=d;renderSales()}
+function switchSaleType(type){
+  document.getElementById('saleItemType').value=type;
+  document.getElementById('saleTypeBtn-product').classList.toggle('active',type==='product');
+  document.getElementById('saleTypeBtn-bundle').classList.toggle('active',type==='bundle');
+  document.getElementById('saleSelectLabel').textContent=type==='bundle'?'选择套组 *':'选择产品 *';
+  populateSaleProducts('',type);
+  document.getElementById('saleProductInfo').innerHTML='';
+  document.getElementById('saleProduct').value='';
+  document.getElementById('salePrice').value='';
+  calcSaleTotal();
+}
+function populateSaleProducts(sel,type){
+  type=type||(document.getElementById('saleItemType')&&document.getElementById('saleItemType').value)||'product';
+  var items=type==='bundle'?(state.bundles||[]):state.products;
+  var label=type==='bundle'?'请选择套组':'请选择产品';
+  document.getElementById('saleProduct').innerHTML='<option value="">— '+label+' —</option>'+items.map(function(p){
+    if(type==='bundle'){var avail=getBundleAvailStock(p);return'<option value="'+p.id+'"'+(sel===p.id?' selected':'')+'>'+esc(p.name)+' (可售'+avail+'套)</option>'}
+    var c=state.categories.find(function(x){return x.id===p.categoryId});
+    return'<option value="'+p.id+'"'+(sel===p.id?' selected':'')+'>'+(c?c.name+'/':'')+esc(p.name)+' (库存'+(p.stock||0)+')</option>';
+  }).join('');
+}
+function openSaleModal(id){
+  document.getElementById('saleId').value=id||'';
+  document.getElementById('saleModalTitle').textContent=id?'编辑销售记录':'记录销售';
+  var s=id?state.sales.find(function(x){return x.id===id}):{};
+  var stype=s.itemType||'product';
+  document.getElementById('saleItemType').value=stype;
+  document.getElementById('saleTypeBtn-product').classList.toggle('active',stype==='product');
+  document.getElementById('saleTypeBtn-bundle').classList.toggle('active',stype==='bundle');
+  document.getElementById('saleSelectLabel').textContent=stype==='bundle'?'选择套组 *':'选择产品 *';
+  populateSaleProducts(stype==='bundle'?(s.bundleId||''):(s.productId||''),stype);
+  document.getElementById('saleQty').value=s.quantity||1;
+  document.getElementById('salePrice').value=s.price||'';
+  document.getElementById('salePlatform').value=s.platform||'微店';
+  document.getElementById('saleBuyer').value=s.buyer||'';
+  document.getElementById('saleDate').value=s.date||todayStr();
+  document.getElementById('saleNote').value=s.note||'';
+  document.getElementById('saleDeleteBox').style.display=id?'block':'none';
+  onSaleProductChange();
+  if(s.price)document.getElementById('salePrice').value=s.price;
+  document.getElementById('saleModal').classList.add('show');
+}
+function editSale(id){openSaleModal(id)}
+function onSaleProductChange(){
+  var id=document.getElementById('saleProduct').value;
+  var type=document.getElementById('saleItemType').value;
+  var info=document.getElementById('saleProductInfo');
+  if(!id){info.innerHTML='';calcSaleTotal();return}
+  if(type==='bundle'){
+    var b=state.bundles.find(function(x){return x.id===id});if(!b)return;
+    if(!document.getElementById('salePrice').value)document.getElementById('salePrice').value=b.price||0;
+    var avail=getBundleAvailStock(b),cost=getBundleCost(b);
+    var itemsStr=b.items.map(function(it){return esc(it.productName)+'x'+it.quantity}).join(' + ');
+    info.innerHTML='<div class="calc-product-pick">'+(b.image?'<img src="'+b.image+'">':'<div style="width:44px;height:44px;border-radius:8px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center">🎁</div>')+'<div class="cp-name">🎁 '+esc(b.name)+'<div class="cp-cost">'+itemsStr+'<br>成本¥'+cost.toFixed(2)+' · 可售'+avail+'套</div></div></div>';
+  } else {
+    var p=state.products.find(function(x){return x.id===id});if(!p)return;
+    if(!document.getElementById('salePrice').value)document.getElementById('salePrice').value=p.price||0;
+    info.innerHTML='<div class="calc-product-pick">'+(p.image?'<img src="'+p.image+'">':'<div style="width:44px;height:44px;border-radius:8px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center">📦</div>')+'<div class="cp-name">'+esc(p.name)+'<div class="cp-cost">成本¥'+(p.cost||0).toFixed(2)+' · 库存'+(p.stock||0)+'</div></div></div>';
+  }
+  calcSaleTotal();
+}
+function calcSaleTotal(){
+  var q=parseInt(document.getElementById('saleQty').value)||0,p=parseFloat(document.getElementById('salePrice').value)||0;
+  var t=q*p;document.getElementById('saleTotalVal').textContent='¥'+t.toFixed(2);
+  var type=document.getElementById('saleItemType').value;
+  var id=document.getElementById('saleProduct').value;
+  if(type==='bundle'){
+    var b=state.bundles.find(function(x){return x.id===id});
+    if(b&&q>0){var cost=getBundleCost(b);var fee=t*(state.settings.platformFee||5)/100;var pr=t-cost*q-fee;var el=document.getElementById('saleProfitVal');el.textContent='利润'+(pr>=0?'+':'')+'¥'+pr.toFixed(2);el.style.color=pr>=0?'var(--seafoam-deep)':'var(--blush-deep)'}
+    else document.getElementById('saleProfitVal').textContent='';
+  } else {
+    var prod=state.products.find(function(x){return x.id===id});
+    if(prod&&q>0){var pr=t-(prod.cost||0)*q;var el=document.getElementById('saleProfitVal');el.textContent='利润'+(pr>=0?'+':'')+'¥'+pr.toFixed(2);el.style.color=pr>=0?'var(--seafoam-deep)':'var(--blush-deep)'}
+    else document.getElementById('saleProfitVal').textContent='';
+  }
+}
+function saveSale(){
+  var type=document.getElementById('saleItemType').value||'product';
+  var pid=document.getElementById('saleProduct').value;if(!pid){toast(type==='bundle'?'请选择套组':'请选择产品');return}
+  var q=parseInt(document.getElementById('saleQty').value)||0;if(q<=0){toast('请填写有效数量');return}
+  var pr=parseFloat(document.getElementById('salePrice').value)||0;
+  var dt=document.getElementById('saleDate').value||todayStr();
+  var nt=document.getElementById('saleNote').value.trim();
+  var rev=q*pr;
+  var id=document.getElementById('saleId').value,isEdit=!!id;
+  var plat=document.getElementById('salePlatform').value,buyer=document.getElementById('saleBuyer').value.trim();
+  if(type==='bundle'){
+    var b=state.bundles.find(function(x){return x.id===pid});if(!b){toast('套组不存在');return}
+    var avail=getBundleAvailStock(b),cost=getBundleCost(b);
+    var fee=rev*(state.settings.platformFee||5)/100,prof=rev-cost*q-fee;
+    if(isEdit){
+      var old=state.sales.find(function(x){return x.id===id});
+      if(old){
+        if(old.itemType==='bundle'){
+          var oldB=state.bundles.find(function(x){return x.id===old.bundleId});
+          if(oldB)oldB.items.forEach(function(it){var pp=state.products.find(function(x){return x.id===it.productId});if(pp){pp.stock=(pp.stock||0)+it.quantity*(old.quantity||0);if(pp.stock>0&&pp.status==='out_of_stock')pp.status='active'}});
+        } else {
+          var op=state.products.find(function(x){return x.id===old.productId});if(op)op.stock=(op.stock||0)+(old.quantity||0);
+        }
+      }
+    }
+    if(avail<q){if(!confirm('可售仅剩'+avail+'套，不足'+q+'套。仍要记录？'))return}
+    b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){p.stock=Math.max(0,(p.stock||0)-it.quantity*q);if(p.stock<=0)p.status='out_of_stock';else if(p.status==='out_of_stock')p.status='active'}});
+    var bdata={id:id||uid(),itemType:'bundle',productId:'',bundleId:pid,bundleName:b.name,quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:cost*q,platform:plat,buyer:buyer};
+    if(isEdit){var bidx=state.sales.findIndex(function(x){return x.id===id});if(bidx>=0)state.sales[bidx]=bdata}else state.sales.push(bdata);
+    saveState();closeModal('saleModal');toast('套组销售已记录~ 🎁 库存已更新');renderSales();return;
+  }
+  var p=state.products.find(function(x){return x.id===pid});if(!p){toast('产品不存在');return}
+  var prof=rev-(p.cost||0)*q;
+  if(!isEdit){if((p.stock||0)<q)if(!confirm('库存仅剩'+(p.stock||0)+'件，不足'+q+'件。仍要记录？'))return;p.stock=Math.max(0,(p.stock||0)-q)}
+  else{var old=state.sales.find(function(x){return x.id===id});if(old){
+    if(old.itemType==='bundle'){var oldB=state.bundles.find(function(x){return x.id===old.bundleId});if(oldB)oldB.items.forEach(function(it){var pp=state.products.find(function(x){return x.id===it.productId});if(pp){pp.stock=(pp.stock||0)+it.quantity*(old.quantity||0);if(pp.stock>0&&pp.status==='out_of_stock')pp.status='active'}})}
+    else{var op=state.products.find(function(x){return x.id===old.productId});if(op)op.stock=(op.stock||0)+(old.quantity||0)}
+  }if(p.stock<q)if(!confirm('库存仅剩'+p.stock+'件，不足'+q+'件。仍要记录？'))return;p.stock=Math.max(0,(p.stock||0)-q)}
+  if(p.stock<=0)p.status='out_of_stock';else if(p.status==='out_of_stock')p.status='active';
+  var data={id:id||uid(),itemType:'product',productId:pid,bundleId:'',bundleName:'',quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:(p.cost||0)*q,platform:plat,buyer:buyer};
+  if(isEdit){var idx=state.sales.findIndex(function(x){return x.id===id});if(idx>=0)state.sales[idx]=data}else state.sales.push(data);
+  saveState();closeModal('saleModal');toast('销售已记录~ 🛒 库存已更新');renderSales();
+}
+function deleteSale(){var id=document.getElementById('saleId').value;if(!id)return;if(!confirm('删除此销售记录将恢复库存。确认删除？'))return;var s=state.sales.find(function(x){return x.id===id});if(!s)return;if(s.itemType==='bundle'){var b=state.bundles.find(function(x){return x.id===s.bundleId});if(b)b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){p.stock=(p.stock||0)+it.quantity*(s.quantity||0);if(p.stock>0&&p.status==='out_of_stock')p.status='active'}})}else{var p=state.products.find(function(x){return x.id===s.productId});if(p){p.stock=(p.stock||0)+(s.quantity||0);if(p.stock>0&&p.status==='out_of_stock')p.status='active'}}state.sales=state.sales.filter(function(x){return x.id!==id});saveState();closeModal('saleModal');renderSales();toast('已删除，库存已恢复')}
+
+// ========== 约稿管理 ==========
+function renderCommissions(){
+  var total=state.commissions.reduce(function(s,c){return s+(c.amount||0)},0);
+  var artists=[...new Set(state.commissions.map(function(c){return c.artist}))];
+  document.getElementById('commTotalAmount').textContent='¥'+total.toFixed(2);
+  document.getElementById('commArtistCount').textContent=artists.length;
+  var list=document.getElementById('commissionList');
+  if(state.commissions.length===0){list.innerHTML='<div class="empty"><span class="emoji">🎨</span>还没有约稿记录<br>点击右下角＋添加</div>';return}
+  list.innerHTML=[...state.commissions].sort(function(a,b){return(b.date||'').localeCompare(a.date||'')}).map(function(c){
+    var cat=c.categoryId?state.categories.find(function(x){return x.id===c.categoryId}):null;
+    var dl=deadlineText(c.deadline);
+    var dh=c.completed?'<span class="tag tag-seafoam">已交稿</span>':(dl?'<span class="tag '+(daysUntil(c.deadline)<0?'tag-pink':'tag-yellow')+'">'+dl+'</span>':'');
+    return'<div class="commission-item" onclick="editCommission(\''+c.id+'\')"><div class="comm-thumb">'+(c.image?'<img src="'+c.image+'">':'<span class="ph">🎨</span>')+'</div><div class="comm-info"><div class="cname">'+esc(c.artist||'未命名画师')+(dh?' '+dh:'')+'</div><div class="cmeta">'+esc(c.contact||'无联系方式')+(c.date?' · '+c.date:'')+(cat?' · '+esc(cat.name):'')+'</div></div><div class="comm-amount">¥'+(c.amount||0).toFixed(2)+'</div></div>';
+  }).join('');
+}
+function populateCommCategories(sel){document.getElementById('commCategory').innerHTML='<option value="">— 无关联 —</option>'+state.categories.map(function(c){return'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+(c.icon||'📦')+' '+esc(c.name)+'</option>'}).join('')}
+function openCommissionModal(id){
+  document.getElementById('commId').value=id||'';
+  document.getElementById('commissionModalTitle').textContent=id?'编辑约稿':'新增约稿';
+  var c=id?state.commissions.find(function(x){return x.id===id}):{};
+  populateCommCategories(c.categoryId||'');
+  document.getElementById('commArtist').value=c.artist||'';
+  document.getElementById('commContact').value=c.contact||'';
+  document.getElementById('commAmount').value=c.amount||'';
+  document.getElementById('commDate').value=c.date||todayStr();
+  document.getElementById('commDeadline').value=c.deadline||'';
+  document.getElementById('commCompleted').value=c.completed?'1':'0';
+  document.getElementById('commNote').value=c.note||'';
+  document.getElementById('commImgData').value=c.image||'';
+  setImgDisplay(c.image||'','commImgUpload','🎨','点击上传约稿图');
+  document.getElementById('commDeleteBox').style.display=id?'block':'none';
+  document.getElementById('commissionModal').classList.add('show');
+}
+function editCommission(id){openCommissionModal(id)}
+function saveCommission(){
+  var artist=document.getElementById('commArtist').value.trim();
+  if(!artist){toast('请填写画师名字');return}
+  var data={id:document.getElementById('commId').value||uid(),artist:artist,contact:document.getElementById('commContact').value.trim(),amount:parseFloat(document.getElementById('commAmount').value)||0,date:document.getElementById('commDate').value,deadline:document.getElementById('commDeadline').value,completed:document.getElementById('commCompleted').value==='1',categoryId:document.getElementById('commCategory').value,note:document.getElementById('commNote').value.trim(),image:document.getElementById('commImgData').value||''};
+  var idx=state.commissions.findIndex(function(c){return c.id===data.id});
+  if(idx>=0)state.commissions[idx]=data;else state.commissions.push(data);
+  saveState();closeModal('commissionModal');toast('保存成功~ 🎨');renderCommissions();
+}
+function deleteCommission(){var id=document.getElementById('commId').value;if(!id)return;if(!confirm('确定删除这条约稿记录吗？'))return;state.commissions=state.commissions.filter(function(c){return c.id!==id});saveState();closeModal('commissionModal');renderCommissions();toast('已删除')}
+
+// ========== 包材管理 ==========
+function renderPkg(){
+  var list=document.getElementById('pkgList');
+  if(state.packaging.length===0){list.innerHTML='<div class="empty"><span class="emoji">📦</span>还没有包材<br>点击右下角＋添加</div>';return}
+  list.innerHTML=state.packaging.map(function(p){
+    var u=p.unitCost||(p.qty>0?p.totalCost/p.qty:0);
+    return'<div class="pkg-item" onclick="editPkg(\''+p.id+'\')"><div class="pkg-thumb">'+(p.image?'<img src="'+p.image+'">':'<span class="ph">📦</span>')+'</div><div class="pkg-info"><div class="pname">'+esc(p.name)+'</div><div class="pmeta">'+esc(p.spec||'')+' · 单价<b>¥'+u.toFixed(3)+'</b> · 库存<b>'+(p.stock||0)+'</b></div></div><span class="tag tag-blue">'+(p.qty||0)+'个</span></div>';
+  }).join('');
+}
+function openPkgModal(id){
+  document.getElementById('pkgId').value=id||'';
+  document.getElementById('pkgModalTitle').textContent=id?'编辑包材':'新增包材';
+  var p=id?state.packaging.find(function(x){return x.id===id}):{};
+  document.getElementById('pkgName').value=p.name||'';document.getElementById('pkgQty').value=p.qty||'';
+  document.getElementById('pkgTotalCost').value=p.totalCost||'';document.getElementById('pkgUnitCost').value=p.unitCost||'';
+  document.getElementById('pkgStock').value=p.stock||'';document.getElementById('pkgSpec').value=p.spec||'';
+  document.getElementById('pkgNote').value=p.note||'';document.getElementById('pkgImgData').value=p.image||'';
+  setImgDisplay(p.image||'','pkgImgUpload','📷','点击上传');
+  document.getElementById('pkgDeleteBox').style.display=id?'block':'none';
+  document.getElementById('pkgModal').classList.add('show');
+}
+function editPkg(id){openPkgModal(id)}
+function calcPkgUnit(){var q=parseFloat(document.getElementById('pkgQty').value)||0,t=parseFloat(document.getElementById('pkgTotalCost').value)||0;document.getElementById('pkgUnitCost').value=q>0?(t/q).toFixed(4):''}
+function calcPkgTotal(){var q=parseFloat(document.getElementById('pkgQty').value)||0,u=parseFloat(document.getElementById('pkgUnitCost').value)||0;document.getElementById('pkgTotalCost').value=(q*u).toFixed(2)}
+function savePkg(){
+  var name=document.getElementById('pkgName').value.trim();if(!name){toast('请填写包材名称');return}
+  var data={id:document.getElementById('pkgId').value||uid(),name:name,qty:parseInt(document.getElementById('pkgQty').value)||0,totalCost:parseFloat(document.getElementById('pkgTotalCost').value)||0,unitCost:parseFloat(document.getElementById('pkgUnitCost').value)||0,stock:parseInt(document.getElementById('pkgStock').value)||0,spec:document.getElementById('pkgSpec').value.trim(),note:document.getElementById('pkgNote').value.trim(),image:document.getElementById('pkgImgData').value||''};
+  if(!data.unitCost&&data.qty>0)data.unitCost=data.totalCost/data.qty;
+  var idx=state.packaging.findIndex(function(p){return p.id===data.id});
+  if(idx>=0)state.packaging[idx]=data;else state.packaging.push(data);
+  saveState();closeModal('pkgModal');toast('保存成功~ 🐻');renderPkg();
+}
+function deletePkg(){var id=document.getElementById('pkgId').value;if(!id)return;if(!confirm('确定删除这个包材吗？'))return;state.packaging=state.packaging.filter(function(p){return p.id!==id});saveState();closeModal('pkgModal');renderPkg();toast('已删除')}
+
+// ========== 费用管理 ==========
+function selectExpType(idx){state.expenseType=state.expenseTypes[idx]||state.expenseTypes[0];renderExpTypePresets(state.expenseType)}
+function delExpType(idx){
+  var type=state.expenseTypes[idx];if(!type)return;
+  if(state.expenseTypes.length<=1){toast('至少保留一个类型');return}
+  var inUse=state.expenses.some(function(e){return e.type===type});
+  if(inUse){if(!confirm('类型「'+type+'」已有费用记录。删除后记录类型变为「其他」。确认？'))return;state.expenses.forEach(function(e){if(e.type===type)e.type='其他'})}
+  else{if(!confirm('删除类型「'+type+'」？'))return}
+  state.expenseTypes.splice(idx,1);
+  if(state.expenseTypes.indexOf('其他')<0)state.expenseTypes.push('其他');
+  if(state.expenseType===type)state.expenseType=state.expenseTypes[0];
+  saveState();renderExpTypePresets(state.expenseType);toast('已删除类型');
+}
+function renderExpTypePresets(sel){
+  var h=state.expenseTypes.map(function(t,i){
+    var inUse=state.expenses.some(function(e){return e.type===t});
+    return'<span style="display:inline-flex;align-items:center;gap:2px"><button class="'+(sel===t?'active':'')+'" onclick="selectExpType('+i+')">'+esc(t)+'</button>'+(state.expenseTypes.length>1?'<button class="del-type" onclick="delExpType('+i+')" title="'+(inUse?'此类型已有记录':'删除')+'">×</button>':'')+'</span>';
+  }).join('');
+  var e1=document.getElementById('expTypePresets'),e2=document.getElementById('expTypePresets2');
+  if(e1)e1.innerHTML=h;if(e2)e2.innerHTML=h;
+}
+function addExpenseType(){
+  var v=(document.getElementById('newExpType').value||document.getElementById('newExpType2').value||'').trim();
+  if(!v){toast('请输入类型名称');return}
+  if(state.expenseTypes.indexOf(v)>=0){toast('该类型已存在');return}
+  state.expenseTypes.push(v);saveState();state.expenseType=v;
+  document.getElementById('newExpType').value='';var e2=document.getElementById('newExpType2');if(e2)e2.value='';
+  renderExpTypePresets(v);toast('已添加类型: '+v);
+}
+function populateExpenseProducts(sel){
+  var el=document.getElementById('expProduct');if(!el)return;
+  el.innerHTML='<option value="">— 无关联 —</option>'+state.products.map(function(p){return'<option value="'+p.id+'"'+(sel===p.id?' selected':'')+'>'+esc(p.name)+'</option>'}).join('');
+}
+function openExpenseModal(id){
+  document.getElementById('expId').value=id||'';
+  var e=id?state.expenses.find(function(x){return x.id===id}):{};
+  state.expenseType=e.type||state.expenseType||'包材';
+  renderExpTypePresets(state.expenseType);
+  document.getElementById('expName').value=e.name||'';
+  document.getElementById('expAmount').value=e.amount||'';
+  document.getElementById('expDate').value=e.date||todayStr();
+  document.getElementById('expNote').value=e.note||'';
+  document.getElementById('expImgData').value=e.image||'';
+  populateExpenseProducts(e.productId||'');
+  setImgDisplay(e.image||'','expImgUpload','📷','上传凭证');
+  document.getElementById('expDeleteBox').style.display=id?'block':'none';
+  document.getElementById('expenseModal').classList.add('show');
+}
+function saveExpense(){
+  var name=document.getElementById('expName').value.trim();
+  var amt=parseFloat(document.getElementById('expAmount').value)||0;
+  if(!name){toast('请填写费用名称');return}
+  if(amt<=0){toast('请填写有效金额');return}
+  var data={id:document.getElementById('expId').value||uid(),type:state.expenseType,name:name,amount:amt,date:document.getElementById('expDate').value,note:document.getElementById('expNote').value.trim(),productId:document.getElementById('expProduct').value||'',image:document.getElementById('expImgData').value||''};
+  var idx=state.expenses.findIndex(function(x){return x.id===data.id});
+  if(idx>=0)state.expenses[idx]=data;else state.expenses.push(data);
+  saveState();closeModal('expenseModal');toast('记录成功~ 💰');renderExpenses();
+}
+function deleteExpense(){var id=document.getElementById('expId').value;if(!id)return;if(!confirm('确定删除这笔费用吗？'))return;state.expenses=state.expenses.filter(function(e){return e.id!==id});saveState();renderExpenses();toast('已删除');closeModal('expenseModal')}
+function renderExpenses(){
+  var sg=document.getElementById('expenseStatGrid');
+  sg.innerHTML=state.expenseTypes.slice(0,4).map(function(t,i){
+    var total=state.expenses.filter(function(e){return e.type===t}).reduce(function(s,e){return s+e.amount},0);
+    var cls=['blue','pink','seafoam','yellow'][i%4];
+    return'<div class="stat-box '+cls+'"><div class="label">'+esc(t)+'</div><div class="num" style="font-size:18px">¥'+total.toFixed(0)+'</div></div>';
+  }).join('');
+  var list=document.getElementById('expenseList');
+  if(state.expenses.length===0){list.innerHTML='<div class="empty"><span class="emoji">💰</span>还没有费用记录<br>点击右下角＋记录</div>';return}
+  var im={包材:{i:'📦',c:'pkg'},推广:{i:'📣',c:'promo'},赠品:{i:'🎁',c:'gift'},运费:{i:'🚚',c:'ship'},其他:{i:'📝',c:'other'}};
+  list.innerHTML=[...state.expenses].sort(function(a,b){return(b.date||'').localeCompare(a.date||'')}).map(function(e){
+    var ic=im[e.type]||{i:'📝',c:'other'};
+    var prod=e.productId?state.products.find(function(x){return x.id===e.productId}):null;
+    return'<div class="expense-item" onclick="openExpenseModal(\''+e.id+'\')"><div class="expense-icon '+ic.c+'">'+ic.i+'</div><div class="expense-info"><div class="ename">'+esc(e.name)+(e.image?' 📎':'')+'</div><div class="emeta">'+esc(e.type)+' · '+esc(e.date||'')+(prod?' · '+esc(prod.name):'')+(e.note?' · '+esc(e.note):'')+'</div></div><div class="expense-amount">¥'+e.amount.toFixed(2)+'</div></div>';
+  }).join('');
+}
+
+// ========== 供应商管理 ==========
+function renderSuppliers(){
+  var list=document.getElementById('supplierList');
+  if(state.suppliers.length===0){list.innerHTML='<div class="empty"><span class="emoji">🏪</span>还没有供应商<br>点击右下角＋添加</div>';return}
+  list.innerHTML=state.suppliers.map(function(s){
+    var pc=state.products.filter(function(p){return p.supplierId===s.id}).length;
+    var sb=s.status==='paused'?'<span class="status-badge status-inactive">已暂停</span>':'<span class="status-badge status-active">合作中</span>';
+    return'<div class="supplier-item" onclick="editSupplier(\''+s.id+'\')"><div class="s-icon">🏪</div><div class="s-info"><div class="s-name">'+esc(s.name)+' '+sb+'</div><div class="s-meta">'+esc(s.contact||'无联系方式')+(s.main?' · '+esc(s.main):'')+(s.paymentCycle?' · '+esc(s.paymentCycle):'')+' · 关联'+pc+'个产品</div></div></div>';
+  }).join('');
+}
+function openSupplierModal(id){
+  document.getElementById('supId').value=id||'';
+  document.getElementById('supplierModalTitle').textContent=id?'编辑供应商':'新增供应商';
+  var s=id?state.suppliers.find(function(x){return x.id===id}):{};
+  document.getElementById('supName').value=s.name||'';
+  document.getElementById('supContact').value=s.contact||'';
+  document.getElementById('supMain').value=s.main||'';
+  document.getElementById('supStatus').value=s.status||'active';
+  document.getElementById('supPaymentCycle').value=s.paymentCycle||'';
+  document.getElementById('supNote').value=s.note||'';
+  document.getElementById('supDeleteBox').style.display=id?'block':'none';
+  document.getElementById('supplierModal').classList.add('show');
+}
+function editSupplier(id){openSupplierModal(id)}
+function saveSupplier(){
+  var name=document.getElementById('supName').value.trim();if(!name){toast('请填写供应商名称');return}
+  var data={id:document.getElementById('supId').value||uid(),name:name,contact:document.getElementById('supContact').value.trim(),main:document.getElementById('supMain').value.trim(),status:document.getElementById('supStatus').value,paymentCycle:document.getElementById('supPaymentCycle').value.trim(),note:document.getElementById('supNote').value.trim()};
+  var idx=state.suppliers.findIndex(function(s){return s.id===data.id});
+  if(idx>=0)state.suppliers[idx]=data;else state.suppliers.push(data);
+  saveState();closeModal('supplierModal');toast('保存成功~ 🏪');renderSuppliers();
+}
+function deleteSupplier(){var id=document.getElementById('supId').value;if(!id)return;if(!confirm('确定删除这个供应商吗？关联产品将变为「无供应商」'))return;state.suppliers=state.suppliers.filter(function(s){return s.id!==id});state.products.forEach(function(p){if(p.supplierId===id)p.supplierId=''});saveState();closeModal('supplierModal');renderSuppliers();toast('已删除')}
+
+// ========== 分装管理 ==========
+function renderAssembly(){
+  var list=state.assemblies||[];
+  document.getElementById('asmCount').textContent=list.length;
+  var tc=list.reduce(function(s,a){return s+(a.sourceQty||0)},0);
+  var tp=list.reduce(function(s,a){return s+(a.targetQty||0)},0);
+  document.getElementById('asmTotalCards').textContent=tc+' 张';
+  document.getElementById('asmTotalPacks').textContent=tp+' 包';
+  var el=document.getElementById('assemblyList');
+  if(list.length===0){el.innerHTML='<div class="card" style="text-align:center;color:var(--brown-light);padding:30px 16px">还没有分装记录<br><span style="font-size:12px">点击右上角「新建分装」开始</span></div>';return}
+  el.innerHTML=list.map(function(a){
+    var src=state.products.find(function(p){return p.id===a.sourceProductId});
+    var tgt=state.products.find(function(p){return p.id===a.targetProductId});
+    var srcName=src?esc(src.name):'(已删除)';
+    var tgtName=tgt?esc(tgt.name):'(已删除)';
+    return '<div class="card" style="margin-bottom:10px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+        '<div><b style="font-size:14px">🔀 '+tgtName+'</b><div style="font-size:12px;color:var(--brown-soft)">← 由 '+srcName+' 分装</div></div>'+
+        '<div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" onclick="editAssembly(\''+a.id+'\')">✏️</button></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">'+
+        '<div style="background:var(--cream);border-radius:8px;padding:8px"><span style="color:var(--brown-soft)">每包张数</span><br><b>'+(a.cardsPerPack||0)+' 张</b></div>'+
+        '<div style="background:var(--cream);border-radius:8px;padding:8px"><span style="color:var(--brown-soft)">分装包数</span><br><b>'+(a.targetQty||0)+' 包</b></div>'+
+        '<div style="background:var(--cream);border-radius:8px;padding:8px"><span style="color:var(--brown-soft)">消耗散卡</span><br><b>'+(a.sourceQty||0)+' 张</b></div>'+
+        '<div style="background:var(--cream);border-radius:8px;padding:8px"><span style="color:var(--brown-soft)">每包成本</span><br><b style="color:var(--seafoam-deep)">¥'+(a.unitCost||0).toFixed(2)+'</b></div>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--brown-light);margin-top:6px">'+(a.date||'')+(a.note?' · '+esc(a.note):'')+'</div>'+
+    '</div>';
+  }).join('');
+}
+function openAssemblyModal(id){
+  var srcSel=document.getElementById('asmSource');
+  var tgtSel=document.getElementById('asmTarget');
+  srcSel.innerHTML='<option value="">— 选择散卡产品 —</option>'+state.products.map(function(p){return'<option value="'+p.id+'">'+esc(p.name)+'（库存'+(p.stock||0)+'）</option>'}).join('');
+  tgtSel.innerHTML='<option value="">— 选择成品（如10张/包）—</option>'+state.products.map(function(p){return'<option value="'+p.id+'">'+esc(p.name)+'（库存'+(p.stock||0)+'）</option>'}).join('');
+  document.getElementById('asmId').value=id||'';
+  document.getElementById('assemblyModalTitle').textContent=id?'编辑分装':'新建分装';
+  document.getElementById('asmCardsPerPack').value=10;
+  document.getElementById('asmPackCount').value=1;
+  document.getElementById('asmDate').value=todayStr();
+  document.getElementById('asmNote').value='';
+  document.getElementById('asmSourceInfo').innerHTML='';
+  document.getElementById('asmTargetInfo').innerHTML='';
+  document.getElementById('asmDeleteBox').style.display=id?'block':'none';
+  if(id){
+    var a=state.assemblies.find(function(x){return x.id===id});
+    if(a){
+      srcSel.value=a.sourceProductId;
+      tgtSel.value=a.targetProductId;
+      document.getElementById('asmCardsPerPack').value=a.cardsPerPack||10;
+      document.getElementById('asmPackCount').value=a.targetQty||1;
+      document.getElementById('asmDate').value=a.date||todayStr();
+      document.getElementById('asmNote').value=a.note||'';
+      onAsmSourceChange();onAsmTargetChange();calcAssembly();
+    }
+  } else {calcAssembly()}
+  document.getElementById('assemblyModal').classList.add('show');
+}
+function onAsmSourceChange(){
+  var id=document.getElementById('asmSource').value;
+  var info=document.getElementById('asmSourceInfo');
+  if(!id){info.innerHTML='';return}
+  var p=state.products.find(function(x){return x.id===id});
+  if(!p)return;
+  info.innerHTML='当前库存 <b>'+(p.stock||0)+'</b> 张 · 单张成本 <b>¥'+(p.cost||0).toFixed(2)+'</b>';
+  calcAssembly();
+}
+function onAsmTargetChange(){
+  var id=document.getElementById('asmTarget').value;
+  var info=document.getElementById('asmTargetInfo');
+  if(!id){info.innerHTML='';return}
+  var p=state.products.find(function(x){return x.id===id});
+  if(!p)return;
+  info.innerHTML='当前库存 <b>'+(p.stock||0)+'</b> 包 · 当前成本 <b>¥'+(p.cost||0).toFixed(2)+'</b>/包';
+  calcAssembly();
+}
+function calcAssembly(){
+  var srcId=document.getElementById('asmSource').value;
+  var cpp=parseInt(document.getElementById('asmCardsPerPack').value)||0;
+  var pc=parseInt(document.getElementById('asmPackCount').value)||0;
+  var totalCards=cpp*pc;
+  var el=document.getElementById('asmCalcResult');
+  if(!srcId||!cpp||!pc){el.innerHTML='<span style="color:var(--brown-light)">请选择源材料并填写张数和包数</span>';return}
+  var src=state.products.find(function(p){return p.id===srcId});
+  if(!src){el.innerHTML='<span style="color:var(--blush-deep)">源材料不存在</span>';return}
+  var cardCost=src.cost||0;
+  var packCost=cardCost*cpp;
+  var totalCost=packCost*pc;
+  var isEdit=document.getElementById('asmId').value;
+  var html='<div style="display:flex;justify-content:space-between"><span style="color:var(--brown-soft)">消耗散卡总数</span><b>'+totalCards+' 张</b></div>';
+  if(isEdit){
+    var oldA=state.assemblies.find(function(x){return x.id===isEdit});
+    if(oldA){var back=oldA.sourceQty||0;html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--brown-soft)">编辑后散卡变动</span><b style="color:'+(totalCards-back<=0?'var(--seafoam-deep)':'var(--blush-deep)')+'">'+(totalCards-back<=0?'返还 ':'再扣 ')+Math.abs(totalCards-back)+' 张</b></div>'}
+  }
+  html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--brown-soft)">源材料单张成本</span><b>¥'+cardCost.toFixed(2)+'</b></div>';
+  html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--brown-soft)">每包分摊成本</span><b style="color:var(--seafoam-deep);font-size:15px">¥'+packCost.toFixed(2)+'</b></div>';
+  html+='<div style="display:flex;justify-content:space-between;border-top:1px solid var(--cream-deep);padding-top:6px;margin-top:4px"><span style="color:var(--brown-soft)">总成本投入</span><b>¥'+totalCost.toFixed(2)+'</b></div>';
+  if(!isEdit&&totalCards>(src.stock||0)){html+='<div style="color:var(--blush-deep);font-size:12px;margin-top:4px">⚠ 散卡库存仅 '+(src.stock||0)+' 张，不足 '+totalCards+' 张</div>'}
+  el.innerHTML=html;
+}
+function saveAssembly(){
+  var id=document.getElementById('asmId').value;
+  var srcId=document.getElementById('asmSource').value;
+  var tgtId=document.getElementById('asmTarget').value;
+  var cpp=parseInt(document.getElementById('asmCardsPerPack').value)||0;
+  var pc=parseInt(document.getElementById('asmPackCount').value)||0;
+  var date=document.getElementById('asmDate').value||todayStr();
+  var note=document.getElementById('asmNote').value.trim();
+  if(!srcId){toast('请选择源材料');return}
+  if(!tgtId){toast('请选择成品产品');return}
+  if(srcId===tgtId){toast('源材料和成品不能相同');return}
+  if(cpp<1||pc<1){toast('张数和包数必须大于0');return}
+  var src=state.products.find(function(p){return p.id===srcId});
+  var tgt=state.products.find(function(p){return p.id===tgtId});
+  if(!src||!tgt){toast('产品不存在');return}
+  var totalCards=cpp*pc;
+  var packCost=(src.cost||0)*cpp;
+  // 编辑模式：先反转旧记录
+  if(id){
+    var oldA=state.assemblies.find(function(x){return x.id===id});
+    if(oldA){
+      var oldSrc=state.products.find(function(p){return p.id===oldA.sourceProductId});
+      var oldTgt=state.products.find(function(p){return p.id===oldA.targetProductId});
+      if(oldSrc)oldSrc.stock=(oldSrc.stock||0)+(oldA.sourceQty||0);
+      if(oldTgt){oldTgt.stock=(oldTgt.stock||0)-(oldA.targetQty||0);if(oldTgt.stock<0)oldTgt.stock=0}
+    }
+  }
+  // 检查源材料库存
+  if(totalCards>(src.stock||0)){toast('散卡库存不足（需要'+totalCards+'张，当前'+(src.stock||0)+'张）');return}
+  // 扣减散卡库存
+  src.stock=(src.stock||0)-totalCards;
+  if(src.status!=='paused')src.status=src.stock>0?'active':'out_of_stock';
+  // 增加成品库存
+  tgt.stock=(tgt.stock||0)+pc;
+  if(tgt.status!=='paused')tgt.status=tgt.stock>0?'active':'out_of_stock';
+  // 按张数比例分摊成本到成品
+  tgt.cost=packCost;
+  // 保存记录
+  var data={id:id||uid(),sourceProductId:srcId,sourceQty:totalCards,targetProductId:tgtId,targetQty:pc,cardsPerPack:cpp,unitCost:packCost,date:date,note:note};
+  if(id){var idx=state.assemblies.findIndex(function(x){return x.id===id});if(idx>=0)state.assemblies[idx]=data;else state.assemblies.push(data)}
+  else state.assemblies.push(data);
+  saveState();closeModal('assemblyModal');renderAssembly();toast('分装成功！散卡-'+totalCards+'张 → 成品+'+pc+'包 🐻');
+}
+function editAssembly(id){openAssemblyModal(id)}
+function deleteAssembly(){
+  var id=document.getElementById('asmId').value;if(!id)return;
+  var a=state.assemblies.find(function(x){return x.id===id});if(!a)return;
+  var src=state.products.find(function(p){return p.id===a.sourceProductId});
+  var tgt=state.products.find(function(p){return p.id===a.targetProductId});
+  if(!confirm('删除后：散卡返还'+(a.sourceQty||0)+'张，成品扣除'+(a.targetQty||0)+'包。确认删除？'))return;
+  if(src)src.stock=(src.stock||0)+(a.sourceQty||0);
+  if(tgt){tgt.stock=(tgt.stock||0)-(a.targetQty||0);if(tgt.stock<0)tgt.stock=0;if(tgt.status!=='paused')tgt.status=tgt.stock>0?'active':'out_of_stock'}
+  if(src&&src.status!=='paused')src.status=src.stock>0?'active':'out_of_stock';
+  state.assemblies=state.assemblies.filter(function(x){return x.id!==id});
+  saveState();closeModal('assemblyModal');renderAssembly();toast('已删除分装记录');
+}
+
+// ========== 采购进货 ==========
+var purType='product';
+function renderPurchases(){
+  var list=state.purchases||[];
+  var today=todayStr(),mp=today.slice(0,7);
+  var monthTotal=list.filter(function(p){return(p.date||'').indexOf(mp)===0}).reduce(function(s,p){return s+(p.totalCost||0)},0);
+  var allTotal=list.reduce(function(s,p){return s+(p.totalCost||0)},0);
+  document.getElementById('purCount').textContent=list.length;
+  document.getElementById('purMonthTotal').textContent='¥'+monthTotal.toFixed(0);
+  document.getElementById('purAllTotal').textContent='¥'+allTotal.toFixed(0);
+  var box=document.getElementById('purchaseList');
+  if(list.length===0){box.innerHTML='<div class="empty"><span class="emoji">🛒</span>还没有采购记录<br>点击右下角＋添加</div>';return}
+  box.innerHTML=[...list].sort(function(a,b){return(b.date||'').localeCompare(a.date||'')}).map(function(p){
+    var sup=p.supplierId?state.suppliers.find(function(s){return s.id===p.supplierId}):null;
+    var ic=p.itemType==='packaging'?'📦':'📦';
+    return'<div class="pkg-item" onclick="editPurchase(\''+p.id+'\')"><div class="pkg-thumb">'+ic+'</div><div class="pkg-info"><div class="pname">'+esc(p.itemName||'未知')+'<span class="tag tag-blue" style="margin-left:4px">'+(p.itemType==='packaging'?'包材':'产品')+'</span></div><div class="pmeta">'+(p.date||'')+' · '+esc(p.qty||0)+(p.unit||'件')+' × ¥'+(p.unitCost||0).toFixed(2)+(sup?' · 🏪'+esc(sup.name):'')+(p.note?' · '+esc(p.note):'')+'</div></div><span style="font-size:14px;font-weight:700;color:var(--seafoam-deep)">¥'+(p.totalCost||0).toFixed(2)+'</span></div>';
+  }).join('');
+}
+function switchPurType(t){
+  purType=t;
+  document.getElementById('purTypeBtn-product').classList.toggle('active',t==='product');
+  document.getElementById('purTypeBtn-packaging').classList.toggle('active',t==='packaging');
+  populatePurItems();
+}
+function populatePurItems(sel){
+  var s=document.getElementById('purItem');
+  if(purType==='product'){
+    s.innerHTML='<option value="">— 请选择产品 —</option>'+state.products.map(function(p){var c=state.categories.find(function(x){return x.id===p.categoryId});return'<option value="'+p.id+'">'+(c?c.name+' / ':'')+esc(p.name)+'</option>'}).join('');
+  } else {
+    s.innerHTML='<option value="">— 请选择包材 —</option>'+state.packaging.map(function(p){return'<option value="'+p.id+'">'+esc(p.name)+(p.spec?' ('+esc(p.spec)+')':'')+'</option>'}).join('');
+  }
+  if(sel)s.value=sel;
+  onPurItemChange();
+}
+function onPurItemChange(){
+  var id=document.getElementById('purItem').value;
+  var info=document.getElementById('purItemInfo');
+  if(!id){info.innerHTML='';return}
+  if(purType==='product'){
+    var p=state.products.find(function(x){return x.id===id});if(!p)return;
+    info.innerHTML='当前库存: '+(p.stock||0)+' · 当前成本: ¥'+(p.cost||0).toFixed(2);
+    document.getElementById('purUnitCost').value=p.cost?(p.cost).toFixed(2):'';
+  } else {
+    var pk=state.packaging.find(function(x){return x.id===id});if(!pk)return;
+    var u=pk.unitCost||(pk.qty>0?pk.totalCost/pk.qty:0);
+    info.innerHTML='当前库存: '+(pk.stock||0)+' · 当前单价: ¥'+u.toFixed(3);
+    document.getElementById('purUnitCost').value=u>0?u.toFixed(3):'';
+  }
+  calcPurTotal();
+}
+function calcPurTotal(){
+  var qty=parseFloat(document.getElementById('purQty').value)||0;
+  var uc=parseFloat(document.getElementById('purUnitCost').value)||0;
+  var total=qty*uc;
+  var r=document.getElementById('purCalcResult');
+  if(qty>0&&uc>0){
+    r.innerHTML='📦 采购数量: <b>'+qty+'</b><br>💰 单价: <b>¥'+uc.toFixed(2)+'</b><br>💵 采购总额: <b style="font-size:16px;color:var(--seafoam-deep)">¥'+total.toFixed(2)+'</b>';
+  } else {r.innerHTML='<span style="color:var(--brown-light)">填写数量和单价后自动计算</span>'}
+}
+function populatePurSuppliers(sel){
+  document.getElementById('purSupplier').innerHTML='<option value="">— 无 —</option>'+state.suppliers.map(function(s){return'<option value="'+s.id+'"'+(sel===s.id?' selected':'')+'>'+esc(s.name)+'</option>'}).join('');
+}
+function openPurchaseModal(id){
+  document.getElementById('purId').value=id||'';
+  document.getElementById('purchaseModalTitle').textContent=id?'编辑采购':'新增采购';
+  var p=id?state.purchases.find(function(x){return x.id===id}):null;
+  purType=p?(p.itemType||'product'):'product';
+  document.getElementById('purTypeBtn-product').classList.toggle('active',purType==='product');
+  document.getElementById('purTypeBtn-packaging').classList.toggle('active',purType==='packaging');
+  populatePurItems(p?p.itemId:'');
+  populatePurSuppliers(p?p.supplierId:'');
+  document.getElementById('purQty').value=p?(p.qty||''):'';
+  document.getElementById('purUnitCost').value=p?(p.unitCost||''):'';
+  document.getElementById('purDate').value=p?(p.date||''):todayStr();
+  document.getElementById('purNote').value=p?(p.note||''):'';
+  document.getElementById('purUpdateCost').checked=p?false:true;
+  document.getElementById('purUpdateCostRow').style.display=id?'block':'block';
+  document.getElementById('purDeleteBox').style.display=id?'block':'none';
+  calcPurTotal();
+  document.getElementById('purchaseModal').classList.add('show');
+}
+function editPurchase(id){openPurchaseModal(id)}
+function savePurchase(){
+  var id=document.getElementById('purId').value;
+  var itemId=document.getElementById('purItem').value;
+  if(!itemId){toast('请选择采购项');return}
+  var qty=parseFloat(document.getElementById('purQty').value)||0;
+  var uc=parseFloat(document.getElementById('purUnitCost').value)||0;
+  if(qty<=0){toast('请填写采购数量');return}
+  if(uc<=0){toast('请填写单价');return}
+  var updateCost=document.getElementById('purUpdateCost').checked;
+  var itemName='';
+  if(purType==='product'){
+    var p=state.products.find(function(x){return x.id===itemId});
+    if(!p){toast('产品不存在');return}
+    itemName=p.name;
+    // 如果是编辑，先反转旧记录
+    if(id){var old=state.purchases.find(function(x){return x.id===id});if(old&&old.itemId===itemId){p.stock=(p.stock||0)-(old.qty||0)}}
+    p.stock=(p.stock||0)+qty;
+    if(updateCost)p.cost=uc;
+    if(p.status!=='inactive')p.status=p.stock>0?'active':'out_of_stock';
+  } else {
+    var pk=state.packaging.find(function(x){return x.id===itemId});
+    if(!pk){toast('包材不存在');return}
+    itemName=pk.name;
+    if(id){var old2=state.purchases.find(function(x){return x.id===id});if(old2&&old2.itemId===itemId){pk.stock=(pk.stock||0)-(old2.qty||0)}}
+    pk.stock=(pk.stock||0)+qty;
+    if(updateCost){pk.totalCost=((pk.totalCost||0)+(qty*uc));pk.qty=(pk.qty||0)+qty;pk.unitCost=pk.totalCost/pk.qty}
+  }
+  var data={id:id||uid(),itemType:purType,itemId:itemId,itemName:itemName,qty:qty,unitCost:uc,totalCost:qty*uc,supplierId:document.getElementById('purSupplier').value,date:document.getElementById('purDate').value,note:document.getElementById('purNote').value.trim(),updateCost:updateCost};
+  var idx=state.purchases.findIndex(function(x){return x.id===data.id});
+  if(idx>=0)state.purchases[idx]=data;else state.purchases.push(data);
+  saveState();closeModal('purchaseModal');renderPurchases();toast('采购已记录，库存已自动增加 📦');
+}
+function deletePurchase(){
+  var id=document.getElementById('purId').value;if(!id)return;
+  var p=state.purchases.find(function(x){return x.id===id});if(!p)return;
+  if(!confirm('删除后库存将扣减'+(p.qty||0)+' '+(p.itemType==='packaging'?'个':'件')+'。确认删除？'))return;
+  if(p.itemType==='product'){
+    var prod=state.products.find(function(x){return x.id===p.itemId});
+    if(prod){prod.stock=(prod.stock||0)-(p.qty||0);if(prod.stock<0)prod.stock=0;if(prod.status!=='inactive')prod.status=prod.stock>0?'active':'out_of_stock'}
+  } else {
+    var pk=state.packaging.find(function(x){return x.id===p.itemId});
+    if(pk){pk.stock=(pk.stock||0)-(p.qty||0);if(pk.stock<0)pk.stock=0}
+  }
+  state.purchases=state.purchases.filter(function(x){return x.id!==id});
+  saveState();closeModal('purchaseModal');renderPurchases();toast('已删除采购记录');
+}
+
+// ========== 组合套组 ==========
+function getBundleAvailStock(b){
+  if(!b||!b.items||b.items.length===0)return 0;
+  var min=Infinity;
+  b.items.forEach(function(it){
+    if(it.productDeleted){min=0;return}
+    var p=state.products.find(function(x){return x.id===it.productId});
+    var stock=p?(p.stock||0):0;
+    var avail=Math.floor(stock/(it.quantity||1));
+    if(avail<min)min=avail;
+  });
+  return min===Infinity?0:min;
+}
+function getBundleCost(b){
+  if(!b||!b.items||b.items.length===0)return 0;
+  return b.items.reduce(function(s,it){
+    if(it.productDeleted)return s+(it.unitCost||0)*(it.quantity||0);
+    var p=state.products.find(function(x){return x.id===it.productId});
+    var cost=p?(p.cost||0):(it.unitCost||0);
+    return s+cost*(it.quantity||0);
+  },0);
+}
+function getBundleStatus(b){var avail=getBundleAvailStock(b);return avail<=0?'out_of_stock':'active'}
+function genBundleSKU(){if(!state.settings.bundleSkuCounter)state.settings.bundleSkuCounter=0;state.settings.bundleSkuCounter++;return 'BF-'+String(state.settings.bundleSkuCounter).padStart(4,'0')}
+function renderBundles(){
+  var list=document.getElementById('bundleList');var bs=state.bundles||[];
+  document.getElementById('bdlCount').textContent=bs.length;
+  document.getElementById('bdlActive').textContent=bs.filter(function(b){return getBundleStatus(b)==='active'}).length;
+  document.getElementById('bdlOos').textContent=bs.filter(function(b){return getBundleStatus(b)!=='active'}).length;
+  if(bs.length===0){list.innerHTML='<div class="empty"><span class="emoji">🎁</span>还没有套组<br>点击右下角＋创建</div>';return}
+  list.innerHTML=bs.map(function(b){
+    var avail=getBundleAvailStock(b),cost=getBundleCost(b);
+    var st=avail<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'<span class="status-badge status-active">在售</span>';
+    var im=b.image?'<img src="'+b.image+'" onclick="event.stopPropagation();showImgLightbox(\''+b.image+'\')">':'<span class="placeholder">🎁</span>';
+    var itemsHtml=b.items.map(function(it){var warn=it.productDeleted?'⚠️':'';return '<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+warn+esc(it.productName)+'x'+it.quantity+'</span>'}).join('');
+    return '<div class="product-card" onclick="editBundle(\''+b.id+'\')"><div class="product-img">'+im+'</div><div class="product-info"><div class="name">🎁 '+esc(b.name)+' '+st+'<span class="sku-text">'+esc(b.sku||'')+'</span></div><div style="margin:2px 0">'+itemsHtml+'</div><div class="price-row"><span class="cost">成本¥'+cost.toFixed(2)+'</span><span class="sell">¥'+(b.price||0).toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">可售'+avail+'套</span></div></div></div>';
+  }).join('');
+}
+var tempBundleItems=[];
+function openBundleModal(id){
+  document.getElementById('bdlId').value=id||'';
+  document.getElementById('bundleModalTitle').textContent=id?'编辑套组':'新建套组';
+  document.getElementById('bdlCategory').innerHTML=state.categories.map(function(c){return'<option value="'+c.id+'">'+(c.icon||'📦')+' '+esc(c.name)+'</option>'}).join('');
+  document.getElementById('bdlItemPicker').innerHTML='<option value="">— 请选择 —</option>'+state.products.filter(function(p){return p.status!=='inactive'}).map(function(p){var c=state.categories.find(function(x){return x.id===p.categoryId});return'<option value="'+p.id+'">'+(c?c.name+'/':'')+esc(p.name)+' (库存'+(p.stock||0)+')</option>'}).join('');
+  var b=id?state.bundles.find(function(x){return x.id===id}):null;
+  document.getElementById('bdlName').value=b?b.name:'';
+  document.getElementById('bdlCategory').value=b?b.categoryId:(state.categories[0]?state.categories[0].id:'');
+  document.getElementById('bdlImgData').value=b?b.image:'';document.getElementById('bdlImg2Data').value=b?b.image2:'';
+  setImgDisplay(b?b.image:'','bdlImgUpload','🎁','上传主图');setImgDisplay(b?b.image2:'','bdlImg2Upload','📷','上传细节图');
+  document.getElementById('bdlDesc').value=b?b.description:'';
+  document.getElementById('bdlPrice').value=b?b.price:'';
+  document.getElementById('bdlSafetyStock').value=b?b.safetyStock:3;
+  document.getElementById('bdlNote').value=b?b.note:'';
+  document.getElementById('bdlDeleteBox').style.display=id?'block':'none';
+  tempBundleItems=b?b.items.map(function(it){return JSON.parse(JSON.stringify(it))}):[];
+  renderBundleItems();
+  document.getElementById('bundleModal').classList.add('show');
+}
+function renderBundleItems(){
+  var list=document.getElementById('bdlItemsList');
+  if(tempBundleItems.length===0){list.innerHTML='<div style="font-size:12px;color:var(--brown-soft);text-align:center;padding:8px">还没有添加子产品</div>';updateBundleStats();return}
+  list.innerHTML=tempBundleItems.map(function(it,idx){
+    var p=state.products.find(function(x){return x.id===it.productId});
+    var stock=p?(p.stock||0):0;
+    var warn=it.productDeleted||!p?'<span style="color:var(--blush-deep);font-size:10px">⚠️ 已删除</span>':'';
+    var maxSet=p?Math.floor(stock/(it.quantity||1)):0;
+    var imSrc=(p&&p.image)||it.productImage;
+    var im=imSrc?'<img src="'+imSrc+'" style="width:32px;height:32px;border-radius:6px;object-fit:cover">':'<div style="width:32px;height:32px;border-radius:6px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center;font-size:12px">📦</div>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--cream);border-radius:8px;margin-bottom:4px">'+im+'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(it.productName)+' '+warn+'</div><div style="font-size:10px;color:var(--brown-soft)">库存'+stock+' · 可组'+maxSet+'套</div></div><div style="display:flex;align-items:center;gap:4px"><input type="number" value="'+it.quantity+'" min="1" style="width:50px;padding:4px;border:1px solid var(--cream-deep);border-radius:6px;font-size:12px;text-align:center" onchange="updateBundleItemQty('+idx+',this.value)"><span style="font-size:11px;color:var(--brown-soft)">x/套</span><button onclick="removeBundleItem('+idx+')" style="background:none;border:none;color:var(--blush-deep);font-size:14px;cursor:pointer;padding:2px 4px">✕</button></div></div>';
+  }).join('');
+  updateBundleStats();
+}
+function addBundleItem(){
+  var pid=document.getElementById('bdlItemPicker').value;if(!pid){toast('请选择产品');return}
+  var qty=parseInt(document.getElementById('bdlItemQty').value)||1;if(qty<1){toast('数量至少为1');return}
+  if(tempBundleItems.some(function(it){return it.productId===pid})){toast('该产品已添加');return}
+  var p=state.products.find(function(x){return x.id===pid});if(!p){toast('产品不存在');return}
+  tempBundleItems.push({productId:pid,productName:p.name,quantity:qty,unitCost:p.cost||0,productImage:p.image||'',productDeleted:false});
+  document.getElementById('bdlItemPicker').value='';document.getElementById('bdlItemQty').value=1;
+  renderBundleItems();
+}
+function removeBundleItem(idx){tempBundleItems.splice(idx,1);renderBundleItems()}
+function updateBundleItemQty(idx,val){var q=parseInt(val)||1;if(q<1)q=1;if(tempBundleItems[idx])tempBundleItems[idx].quantity=q;updateBundleStats()}
+function updateBundleStats(){
+  var tempB={items:tempBundleItems};
+  var cost=getBundleCost(tempB),avail=getBundleAvailStock(tempB);
+  document.getElementById('bdlCostVal').textContent='¥'+cost.toFixed(2);
+  document.getElementById('bdlAvailVal').textContent=avail+' 套';
+  var fee=state.settings.platformFee||5;
+  var breakEven=cost/(1-fee/100),suggest=breakEven*1.3;
+  document.getElementById('bdlSuggestVal').textContent='¥'+suggest.toFixed(2);
+}
+function saveBundle(){
+  var name=document.getElementById('bdlName').value.trim();if(!name){toast('请填写套组名称');return}
+  if(tempBundleItems.length===0){toast('请至少添加一个子产品');return}
+  var id=document.getElementById('bdlId').value,isEdit=!!id;
+  var existing=isEdit?state.bundles.find(function(b){return b.id===id}):null;
+  var data={
+    id:id||uid(),name:name,
+    sku:existing?existing.sku||genBundleSKU():genBundleSKU(),
+    categoryId:document.getElementById('bdlCategory').value,
+    image:document.getElementById('bdlImgData').value,image2:document.getElementById('bdlImg2Data').value,
+    description:document.getElementById('bdlDesc').value.trim(),
+    price:parseFloat(document.getElementById('bdlPrice').value)||0,
+    safetyStock:parseInt(document.getElementById('bdlSafetyStock').value)||3,
+    note:document.getElementById('bdlNote').value.trim(),
+    items:tempBundleItems.map(function(it){var p=state.products.find(function(x){return x.id===it.productId});return{productId:it.productId,productName:it.productName,quantity:it.quantity,unitCost:it.unitCost,productImage:it.productImage,productDeleted:!p}}),
+    status:'active',createdAt:existing?existing.createdAt||todayStr():todayStr()
+  };
+  if(isEdit){var idx=state.bundles.findIndex(function(b){return b.id===id});if(idx>=0)state.bundles[idx]=data;else state.bundles.push(data)}
+  else state.bundles.push(data);
+  saveState();closeModal('bundleModal');renderBundles();toast(isEdit?'套组已更新':'套组已创建~ 🎁');
+}
+function editBundle(id){openBundleModal(id)}
+function deleteBundle(){
+  var id=document.getElementById('bdlId').value;if(!id)return;
+  var bs=state.sales.filter(function(s){return s.itemType==='bundle'&&s.bundleId===id});
+  if(bs.length>0){if(!confirm('此套组有 '+bs.length+' 条销售记录，删除后历史记录仍保留但套组将不可用。确认删除？'))return}
+  else{if(!confirm('确定删除此套组吗？'))return}
+  state.bundles=state.bundles.filter(function(b){return b.id!==id});
+  saveState();closeModal('bundleModal');renderBundles();toast('已删除');
+}
+
+// ========== 智能定价计算器 ==========
+function getSelectedCommTotal(){
+  var checks=document.querySelectorAll('.comm-pool-check');var total=0;
+  if(checks.length===0)return state.commissions.reduce(function(s,c){return s+(c.amount||0)},0);
+  checks.forEach(function(cb){if(cb.checked){var c=state.commissions.find(function(x){return x.id===cb.value});if(c)total+=c.amount||0}});
+  return total;
+}
+function getSelectedComms(){
+  var checks=document.querySelectorAll('.comm-pool-check');var arr=[];
+  if(checks.length===0)return state.commissions;
+  checks.forEach(function(cb){if(cb.checked){var c=state.commissions.find(function(x){return x.id===cb.value});if(c)arr.push(c)}});
+  return arr;
+}
+function renderCommPoolList(){
+  var box=document.getElementById('commPoolList');
+  if(!box)return;
+  if(state.commissions.length===0){box.innerHTML='<div style="font-size:12px;color:var(--brown-soft);text-align:center;padding:12px">暂无约稿记录</div>';updateCommPoolTotal();return}
+  box.innerHTML=[...state.commissions].sort(function(a,b){return(b.date||'').localeCompare(a.date||'')}).map(function(c){
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:var(--cream);margin-bottom:4px;cursor:pointer">'+
+      '<input type="checkbox" class="comm-pool-check" value="'+c.id+'" checked onchange="updateCommPoolTotal()" style="width:16px;height:16px;flex-shrink:0">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.artist||'未命名')+(c.completed?' <span style="font-size:10px;color:var(--mint-deep)">✓</span>':'')+'</div>'+
+        '<div style="font-size:10px;color:var(--brown-soft)">'+(c.date||'')+(c.note?' · '+esc(c.note.slice(0,12)):'')+'</div>'+
+      '</div>'+
+      '<b style="font-size:13px;color:var(--lavender-deep);flex-shrink:0">¥'+(c.amount||0).toFixed(2)+'</b>'+
+    '</label>';
+  }).join('');
+  updateCommPoolTotal();
+}
+function updateCommPoolTotal(){
+  var t=getSelectedCommTotal();
+  var el=document.getElementById('commPoolTotal');if(el)el.textContent='¥'+t.toFixed(2);
+}
+function toggleAllCommPool(){
+  var checks=document.querySelectorAll('.comm-pool-check');if(checks.length===0)return;
+  var allChecked=true;checks.forEach(function(cb){if(!cb.checked)allChecked=false});
+  checks.forEach(function(cb){cb.checked=!allChecked});
+  updateCommPoolTotal();
+}
+function getCommPoolTotal(){return getSelectedCommTotal()}
+function initCalc(){
+  var sel=document.getElementById('calcProduct'),cur=sel.value;
+  sel.innerHTML='<option value="">— 请选择产品 —</option>'+state.products.map(function(p){var c=state.categories.find(function(x){return x.id===p.categoryId});return'<option value="'+p.id+'">'+(c?c.name+' / ':'')+esc(p.name)+'</option>'}).join('');
+  if(cur)sel.value=cur;
+  renderCommPoolList();
+  onCalcProductChange();
+}
+function onCalcProductChange(){
+  var id=document.getElementById('calcProduct').value;
+  var info=document.getElementById('calcProductInfo');
+  if(!id){info.innerHTML='';calcPrice();return}
+  var p=state.products.find(function(x){return x.id===id});if(!p)return;
+  document.getElementById('calcCost').value=p.cost||0;
+  info.innerHTML='<div class="calc-product-pick">'+(p.image?'<img src="'+p.image+'">':'<div style="width:44px;height:44px;border-radius:8px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center">📦</div>')+'<div class="cp-name">'+esc(p.name)+'<div class="cp-cost">单件成本¥'+(p.cost||0).toFixed(2)+' · 库存'+(p.stock||0)+'</div></div></div>';
+  var tp=state.expenses.filter(function(e){return e.type==='推广'}).reduce(function(s,e){return s+e.amount},0);
+  var tg=state.expenses.filter(function(e){return e.type==='赠品'}).reduce(function(s,e){return s+e.amount},0);
+  var tc=getSelectedCommTotal();
+  var ts=state.products.reduce(function(s,x){return s+(x.stock||0)},0)||1;
+  document.getElementById('calcPromo').value=(tp/ts).toFixed(2);
+  document.getElementById('calcGift').value=(tg/ts).toFixed(2);
+  document.getElementById('calcComm').value=(tc/ts).toFixed(2);
+  if(state.packaging.length>0){var pk=state.packaging[0];var u=pk.unitCost||(pk.qty>0?pk.totalCost/pk.qty:0);document.getElementById('calcPkg').value=u.toFixed(2)}
+  updateCommPoolTotal();
+  renderPriceHistory();
+  calcPrice();
+}
+function allocCommByQty(){
+  var id=document.getElementById('calcProduct').value;if(!id){toast('请先选择产品');return}
+  var p=state.products.find(function(x){return x.id===id});if(!p)return;
+  var pool=getSelectedCommTotal(),st=p.stock||1;
+  if(pool<=0){toast('请先勾选要分摊的约稿');return}
+  if(st<=0){toast('该产品库存为0');return}
+  var pu=pool/st;
+  document.getElementById('calcComm').value=pu.toFixed(2);
+  calcPrice();toast('已按'+st+'件库存分摊，每件¥'+pu.toFixed(2));
+}
+function calcPrice(){
+  var cost=parseFloat(document.getElementById('calcCost').value)||0;
+  var pkg=parseFloat(document.getElementById('calcPkg').value)||0;
+  var promo=parseFloat(document.getElementById('calcPromo').value)||0;
+  var gift=parseFloat(document.getElementById('calcGift').value)||0;
+  var comm=parseFloat(document.getElementById('calcComm').value)||0;
+  var ship=parseFloat(document.getElementById('calcShip').value)||0;
+  var feeRate=(parseFloat(document.getElementById('calcFee').value)||0)/100;
+  var margin=(parseFloat(document.getElementById('calcMargin').value)||0)/100;
+  var mp=parseFloat(document.getElementById('calcManualPrice').value)||0;
+  var tc2=cost+pkg+promo+gift+comm+ship;
+  var be=feeRate<1?tc2/(1-feeRate):tc2;
+  var su=be*(1+margin);
+  document.getElementById('calcSuggestedHidden').value=su;
+  document.getElementById('calcTotalCostHidden').value=tc2;
+  var parts=[{n:'产品',v:cost,c:'#5BB8A5'},{n:'包材',v:pkg,c:'#8EC9E8'},{n:'推广',v:promo,c:'#FFD93D'},{n:'赠品',v:gift,c:'#FF9EB5'},{n:'约稿',v:comm,c:'#B8A0D8'},{n:'运费',v:ship,c:'#7FCE9F'}].filter(function(x){return x.v>0});
+  var tfb=parts.reduce(function(s,x){return s+x.v},0)||1;
+  var up=mp>0?mp:su;
+  var fee=up*feeRate,rp=up-tc2-fee,rr=up>0?rp/up*100:0,isL=rp<0;
+  var r=document.getElementById('calcResults');
+  r.innerHTML='<div class="card"><div class="card-title">📊 成本构成（每件）</div><div class="cost-bar">'+parts.map(function(x){return'<div style="width:'+(x.v/tfb*100)+'%;background:'+x.c+'">'+(x.v/tfb>0.15?x.n:'')+'</div>'}).join('')+'</div><div class="cost-legend">'+parts.map(function(x){return'<span><i style="background:'+x.c+'"></i>'+x.n+' ¥'+x.v.toFixed(2)+'</span>'}).join('')+'</div><div style="text-align:center;margin-top:10px;font-size:13px;color:var(--brown-soft)">每件总成本 <b style="font-size:18px;color:var(--brown)">¥'+tc2.toFixed(2)+'</b></div></div><div class="calc-result breakeven"><div class="r-label">🚨 保本售价（不低于此价）</div><div class="r-value">¥'+be.toFixed(2)+'</div><div class="r-sub">含平台抽成'+(feeRate*100)+'% · 低于此价必亏</div></div><div class="calc-result" style="margin-top:10px"><div class="r-label">✨ 建议售价（目标利润率'+(margin*100)+'%）</div><div class="r-value">¥'+su.toFixed(2)+'</div><div class="r-sub">加价¥'+(su-cost).toFixed(2)+' · 利润¥'+(su-be).toFixed(2)+'/件</div></div><div class="calc-result '+(isL?'':'profit')+'" style="margin-top:10px"><div class="r-label">'+(mp>0?'📝 按你设定的售价计算':'当前建议售价利润')+'</div><div class="r-value" style="color:#fff">'+(isL?'⚠️ 亏本':'✅ 盈利')+'</div><div class="r-sub" style="font-size:14px;color:#fff">售价¥'+up.toFixed(2)+'-成本¥'+tc2.toFixed(2)+'-抽成¥'+fee.toFixed(2)+'=<b style="font-size:18px">'+(isL?'-':'')+'¥'+Math.abs(rp).toFixed(2)+'</b>/件</div><div class="r-sub" style="color:#fff;margin-top:4px">实际利润率'+rr.toFixed(1)+'%</div></div><div class="card" style="margin-top:12px"><div class="card-title">💡 定价参考</div><div style="font-size:12px;color:var(--brown-soft);line-height:1.8">'+getPricingAdvice(cost,be,su,rp,margin)+'</div></div>';
+}
+function getPricingAdvice(cost,be,su,pr,m){
+  var h='';
+  if(cost>0&&be>0){var mu=(be/cost-1)*100;h+='📌 成本¥'+cost.toFixed(2)+'→保本价¥'+be.toFixed(2)+'，保本需加价'+mu.toFixed(0)+'%<br>'}
+  if(cost>0){var sp=((su-cost)/cost*100);h+='📌 建议售价¥'+su.toFixed(2)+'，是成本的'+(su/cost).toFixed(1)+'倍（加价'+sp.toFixed(0)+'%）<br>'}
+  if(pr<0){h+='⚠️ 当前售价会亏本！至少卖¥'+be.toFixed(2)+'才不亏<br>'}else{h+='✅ 当前每件赚¥'+pr.toFixed(2)+'，利润率'+(m*100)+'%<br>'}
+  h+='🐻 文创贴纸/纸制品参考：零售价通常=成本×3~5倍';
+  return h;
+}
+function syncPriceToProduct(){
+  var id=document.getElementById('calcProduct').value;if(!id){toast('请先选择产品');return}
+  var p=state.products.find(function(x){return x.id===id});if(!p)return;
+  var mp=parseFloat(document.getElementById('calcManualPrice').value)||0;
+  var su=parseFloat(document.getElementById('calcSuggestedHidden').value)||0;
+  var tc=parseFloat(document.getElementById('calcTotalCostHidden').value)||0;
+  var up=mp>0?mp:su;if(up<=0){toast('无有效售价');return}
+  var mg=up>0?(up-tc)/up:0;
+  state.priceHistory.push({id:uid(),productId:id,time:new Date().toISOString(),price:up,totalCost:tc,margin:mg});
+  p.price=up;saveState();toast('已同步售价¥'+up.toFixed(2)+'到产品');renderPriceHistory();
+}
+function renderPriceHistory(){
+  var id=document.getElementById('calcProduct').value;
+  var el=document.getElementById('priceHistoryList');
+  if(!id){el.innerHTML='<p style="font-size:12px;color:var(--brown-light)">请先选择产品</p>';return}
+  var h=state.priceHistory.filter(function(x){return x.productId===id}).sort(function(a,b){return(b.time||'').localeCompare(a.time||'')});
+  if(h.length===0){el.innerHTML='<p style="font-size:12px;color:var(--brown-light)">暂无定价记录</p>';return}
+  el.innerHTML=h.slice(0,5).map(function(x){
+    var d=new Date(x.time),ds=(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+    var mp=(x.margin*100).toFixed(0);
+    return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--cream-deep);font-size:12px"><span>'+ds+'</span><span>售价¥'+x.price.toFixed(2)+'</span><span>成本¥'+x.totalCost.toFixed(2)+'</span><span style="color:'+(x.margin>=0?'var(--seafoam-deep)':'var(--blush-deep)')+'">利润率'+mp+'%</span></div>';
+  }).join('');
+}
+
+// ========== 数据导出 ==========
+function populateExportMonths(){
+  var sel=document.getElementById('exportMonth');if(!sel)return;
+  var months={};
+  state.sales.forEach(function(s){if(s.date){var m=s.date.slice(0,7);if(!months[m])months[m]=0;months[m]++}});
+  var cm=todayStr().slice(0,7);if(!months[cm])months[cm]=0;
+  var sorted=Object.keys(months).sort().reverse();
+  sel.innerHTML=sorted.map(function(m){return'<option value="'+m+'">'+m+' ('+months[m]+'笔)</option>'}).join('');
+  updateExportPreview();
+}
+function updateExportPreview(){
+  var m=document.getElementById('exportMonth').value;if(!m)return;
+  var ss=state.sales.filter(function(s){return s.date&&s.date.indexOf(m)===0});
+  var rev=ss.reduce(function(s,x){return s+(x.revenue||0)},0);
+  var prof=ss.reduce(function(s,x){return s+(x.profit||0)},0);
+  var qty=ss.reduce(function(s,x){return s+(x.quantity||0)},0);
+  document.getElementById('exportPreview').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div style="text-align:center"><div style="font-size:11px;color:var(--brown-light)">销售额</div><div style="font-size:16px;font-weight:700;color:var(--seafoam-deep)">¥'+rev.toFixed(0)+'</div></div><div style="text-align:center"><div style="font-size:11px;color:var(--brown-light)">利润</div><div style="font-size:16px;font-weight:700">¥'+prof.toFixed(0)+'</div></div><div style="text-align:center"><div style="font-size:11px;color:var(--brown-light)">件数</div><div style="font-size:16px;font-weight:700">'+qty+'</div></div></div>';
+}
+function exportSalesCSV(){
+  var m=document.getElementById('exportMonth').value;if(!m){toast('请选择月份');return}
+  var ss=state.sales.filter(function(s){return s.date&&s.date.indexOf(m)===0});
+  if(ss.length===0){toast('该月无销售记录');return}
+  var csv='\ufeff日期,类型,产品名称,分类,数量,单价,总收入,成本,利润,渠道,买家,备注\n';
+  ss.sort(function(a,b){return(a.date||'').localeCompare(b.date||'')}).forEach(function(s){
+    var isBundle=s.itemType==='bundle';
+    var p=isBundle?null:state.products.find(function(x){return x.id===s.productId});
+    var c=p?state.categories.find(function(x){return x.id===p.categoryId}):null;
+    var nm=isBundle?(s.bundleName||'套组'):(p?p.name:'已删除');
+    csv+=[s.date||'',isBundle?'🎁套组':'📦单品',nm.replace(/,/g,'，'),(c?c.name:'').replace(/,/g,'，'),s.quantity||0,(s.price||0).toFixed(2),(s.revenue||0).toFixed(2),(s.cost||0).toFixed(2),(s.profit||0).toFixed(2),(s.platform||'').replace(/,/g,'，'),(s.buyer||'').replace(/,/g,'，'),(s.note||'').replace(/,/g,'，').replace(/\n/g,' ')].join(',')+'\n';
+  });
+  var tr=ss.reduce(function(s,x){return s+(x.revenue||0)},0),tp=ss.reduce(function(s,x){return s+(x.profit||0)},0);
+  csv+='\n合计,,,,,'+ss.reduce(function(s,x){return s+(x.quantity||0)},0)+',,'+tr.toFixed(2)+','+ss.reduce(function(s,x){return s+(x.cost||0)},0).toFixed(2)+','+tp.toFixed(2)+'\n';
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='Seafoam销售报表_'+m+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast('已导出'+ss.length+'笔销售记录');
+}
+
+// ========== 图片处理 ==========
+function handleImgUpload(input,uid2,did){
+  var file=input.files[0];if(!file)return;
+  if(file.size>800*1024)toast('图片较大，压缩中...');
+  var reader=new FileReader();
+  reader.onload=function(ev){var img=new Image();img.onload=function(){var c=document.createElement('canvas'),mw=400,w=img.width,h=img.height;if(w>mw){h=h*mw/w;w=mw}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);var d=c.toDataURL('image/jpeg',0.7);document.getElementById(did).value=d;setImgDisplay(d,uid2)};img.src=ev.target.result};
+  reader.readAsDataURL(file);
+}
+function onImgUrlInput(input,uid2,did){var v=input.value.trim();document.getElementById(did).value=v;setImgDisplay(v,uid2)}
+function setImgDisplay(src,uid2,di,dt){
+  var el=document.getElementById(uid2);if(!el)return;
+  if(src)el.innerHTML='<img src="'+src+'" onclick="showImgLightbox(\''+src+'\')" style="cursor:pointer">';
+  else el.innerHTML='<span class="up-ico">'+(di||'📷')+'</span><span>'+(dt||'点击上传图片')+'</span>';
+}
+
+// ========== 通用 ==========
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show')})});
+
+// ========== 日期初始化 ==========
+(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
+
+// ========== 初始化 ==========
+loadState();
+migrateData();
+renderHome();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      console.log('PWA离线模式已启用');
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing;if(!nw)return;
+        nw.addEventListener('statechange',function(){
+          if(nw.state==='installed'&&navigator.serviceWorker.controller){
+            navigator.serviceWorker.controller.postMessage('SKIP_WAITING');
+            window.location.reload();
+          }
+        });
+      });
+      reg.update();
+    }).catch(function(e){console.warn('SW注册失败',e)});
+  });
+  navigator.serviceWorker.addEventListener('controllerchange',function(){window.location.reload()});
+}
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();deferredPrompt=e;showInstallBanner();
+});
+function showInstallBanner(){
+  if(!deferredPrompt)return;
+  if(localStorage.getItem('pwa_installed'))return;
+  var b=document.createElement('div');
+  b.style.cssText='position:fixed;bottom:96px;left:14px;right:14px;z-index:150;background:linear-gradient(135deg,#7FDBCA,#5BB8A5);color:#fff;padding:12px 16px;border-radius:16px;box-shadow:0 4px 16px rgba(91,184,165,.4);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600';
+  b.innerHTML='<span style="font-size:24px">🐻</span><div style="flex:1"><div style="font-size:14px">安装到手机桌面</div><div style="font-size:11px;opacity:.8">离线也能用，像App一样打开</div></div><button id="installBtn" style="background:#fff;color:#5BB8A5;border:none;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer">安装</button><button id="closeInstallBtn" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:4px">×</button>';
+  document.body.appendChild(b);
+  document.getElementById('installBtn').onclick=function(){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r){
+      if(r.outcome==='installed')localStorage.setItem('pwa_installed','1');
+      deferredPrompt=null;b.remove();
+    });
+  };
+  document.getElementById('closeInstallBtn').onclick=function(){b.remove();localStorage.setItem('pwa_installed','1')};
+}
+window.addEventListener('appinstalled',function(){localStorage.setItem('pwa_installed','1');toast('安装成功！桌面已添加图标 🐻')});
+</script>
+</body>
+</html>

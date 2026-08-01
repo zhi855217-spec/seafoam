@@ -1,0 +1,11 @@
+# WorkBuddy 会话内部数据，不进仓库
+.workbuddy/
+
+# 本地重复副本（保留 app.html 作本地快捷入口，但 GitHub 用 index.html）
+chiikawa文创工作台.html
+
+# 临时脚本/缓存
+_check*.js
+_chk*.js
+*.tmp
+.DS_Store
