@@ -301,6 +301,7 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 .bent .bl{font-size:12px;color:var(--brown-soft);font-weight:600;margin-bottom:3px}
 .bent .bv{font-family:"Quicksand",sans-serif;font-size:22px;font-weight:700;color:var(--brown);line-height:1.2}
 .bent .bs{font-size:11px;color:var(--brown-light);margin-top:2px}
+.bent .cmp{font-size:11px;margin-top:4px;font-weight:600}
 .bent-seafoam{background:linear-gradient(135deg,#EAFBF6,var(--seafoam-light))}
 .bent-pink{background:linear-gradient(135deg,#FFF0F6,var(--blush))}
 .bent-yellow{background:linear-gradient(135deg,#FFFCEB,var(--yellow))}
@@ -409,10 +410,12 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
     <div class="bent bent-seafoam" onclick="goPage('sales')">
       <div class="bl">💰 今日销售额</div>
       <div class="bv" id="dashTodayRev" style="font-size:20px">¥0</div>
+      <div class="cmp" id="dashTodayRevCmp"></div>
     </div>
     <div class="bent bent-pink" onclick="goPage('sales')">
       <div class="bl">💸 今日利润</div>
       <div class="bv" id="dashTodayProfit" style="font-size:20px">¥0</div>
+      <div class="cmp" id="dashTodayProfitCmp"></div>
     </div>
     <!-- 利润率环 -->
     <div class="bent rate-card">
@@ -515,6 +518,16 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 <div class="page" id="page-calc">
   <div class="section-head"><h2>🧮 智能定价助手</h2></div>
   <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--brown-soft)">📦 成本计算方式</span>
+      <select class="form-select" style="width:auto" id="costMethodSel" onchange="setCostMethod(this.value)">
+        <option value="avg">加权平均</option>
+        <option value="fifo">先进先出(FIFO)</option>
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--brown-light);margin-top:4px">影响销售利润：FIFO 按最早批次成本，加权平均按所有批次均值</div>
+  </div>
+  <div class="card">
     <div class="form-label">选择产品</div>
     <select class="form-select" id="calcProduct" onchange="onCalcProductChange()"><option value="">— 请选择产品 —</option></select>
     <div id="calcProductInfo"></div>
@@ -539,12 +552,16 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
     <div class="calc-input"><label>推广费用分摊</label><div class="input-wrap"><input type="number" id="calcPromo" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
     <div class="calc-input"><label>赠品成本分摊</label><div class="input-wrap"><input type="number" id="calcGift" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
     <div class="calc-input"><label>约稿成本分摊</label><div class="input-wrap"><input type="number" id="calcComm" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
+    <div class="calc-input"><label>预计销量(稿费均摊)</label><div class="input-wrap"><input type="number" id="calcExpectedSales" value="0" oninput="onExpectedSalesChange()"><span class="unit">件</span></div></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--brown-soft);margin-top:4px"><input type="checkbox" id="calcCommAmortize" onchange="onCommAmortizeChange()"> 稿费按销量均摊（¥稿费÷预计销量）</label>
     <div class="calc-input"><label>运费（买家付/自理）</label><div class="input-wrap"><input type="number" id="calcShip" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
   </div>
   <div class="card">
     <div class="card-title">⚙️ 售价参数</div>
     <div class="calc-input"><label>平台抽成比例</label><div class="input-wrap"><input type="number" id="calcFee" value="5" step="0.5" oninput="calcPrice()"><span class="unit">%</span></div></div>
-    <div class="calc-input"><label>目标利润率</label><div class="input-wrap"><input type="number" id="calcMargin" value="40" oninput="calcPrice()"><span class="unit">%</span></div></div>
+    <div class="calc-input"><label>目标利润率</label><div class="input-wrap"><input type="number" id="calcMargin" value="40" oninput="document.getElementById('calcMarginSlider').value=this.value;calcPrice()"><span class="unit">%</span></div></div>
+    <input type="range" min="0" max="90" step="1" value="40" id="calcMarginSlider" oninput="document.getElementById('calcMargin').value=this.value;calcPrice()" style="width:100%;margin-top:2px;accent-color:var(--seafoam-deep)">
+    <div style="font-size:11px;color:var(--brown-light);margin-top:2px">拖动滑块实时看建议售价变化 ▶</div>
     <div class="calc-input"><label>手动设定售价</label><div class="input-wrap"><input type="number" id="calcManualPrice" value="0" oninput="calcPrice()"><span class="unit">元</span></div></div>
   </div>
   <div id="calcResults"></div>
@@ -559,14 +576,15 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
 <!-- ====== 更多 ====== -->
 <div class="page" id="page-more">
   <div class="sub-tabs">
-    <button class="active" id="mtab-expense" onclick="switchMoreTab('expense')">🫧 费用</button>
-    <button id="mtab-commission" onclick="switchMoreTab('commission')">🪸 约稿</button>
-    <button id="mtab-packaging" onclick="switchMoreTab('packaging')">🐟 包材</button>
-    <button id="mtab-supplier" onclick="switchMoreTab('supplier')">🦀 供应商</button>
-    <button id="mtab-assembly" onclick="switchMoreTab('assembly')">🦑 分装</button>
-    <button id="mtab-purchase" onclick="switchMoreTab('purchase')">🐡 采购</button>
-    <button id="mtab-bundle" onclick="switchMoreTab('bundle')">🐙 套组</button>
-    <button id="mtab-export" onclick="switchMoreTab('export')">🐬 导出</button>
+    <button class="active" id="mtab-expense" onclick="switchMoreTab('expense')">💰 费用</button>
+    <button id="mtab-commission" onclick="switchMoreTab('commission')">🎨 约稿</button>
+    <button id="mtab-packaging" onclick="switchMoreTab('packaging')">📦 包材</button>
+    <button id="mtab-supplier" onclick="switchMoreTab('supplier')">🏪 供应商</button>
+    <button id="mtab-assembly" onclick="switchMoreTab('assembly')">🔀 分装</button>
+    <button id="mtab-purchase" onclick="switchMoreTab('purchase')">🛒 采购</button>
+    <button id="mtab-bundle" onclick="switchMoreTab('bundle')">🎁 套组</button>
+    <button id="mtab-export" onclick="switchMoreTab('export')">📊 导出</button>
+    <button id="mtab-trash" onclick="switchMoreTab('trash')">🗑️ 回收站</button>
   </div>
   <div id="more-expense">
     <div class="section-head"><h2>💰 费用记录</h2><button class="btn btn-primary btn-sm" onclick="openExpenseModal()">＋ 记一笔</button></div>
@@ -644,9 +662,22 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
       <button class="btn btn-block" onclick="exportBackup()">📦 导出完整备份 (JSON)</button>
       <div style="height:8px"></div>
       <button class="btn btn-block" onclick="document.getElementById('mergeFile').click()">📥 导入并合并备份 (JSON)</button>
-      <input type="file" id="mergeFile" accept=".json,application/json" style="display:none" onchange="importMerge(this)">
+      <input type="file" id="mergeFile" accept=".json,application/json" style="display:none" onchange="startImportWizard(this)">
       <p style="font-size:11px;color:var(--brown-light);margin-top:8px;text-align:center">合并前建议先「导出完整备份」留存，防止误操作</p>
     </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">🖼️ 图片体检 · 存储优化</div>
+      <p style="font-size:12px;color:var(--brown-light);line-height:1.6;margin-bottom:10px">所有图片都以 Base64 存在本地，会占用存储空间。可一键压缩以释放空间（画质略有下降）。</p>
+      <div id="imgHealthStat" style="font-size:12px;color:var(--brown);margin-bottom:10px"></div>
+      <button class="btn btn-block" onclick="compressAllImages()">🗜️ 一键压缩所有图片</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-ghost btn-block" onclick="if(confirm('彻底清空回收站将永久删除其中全部图片与数据，不可恢复，确认吗？')){emptyTrash();updateStorageUsage()}">🗑️ 清空回收站释放空间</button>
+    </div>
+  </div>
+  <div id="more-trash" style="display:none">
+    <div class="section-head"><h2>🗑️ 回收站</h2><button class="btn btn-ghost btn-sm" id="emptyTrashBtn" onclick="emptyTrash()">清空全部</button></div>
+    <p style="font-size:12px;color:var(--brown-light);line-height:1.6;margin-bottom:10px">删除的内容会保留 30 天，期间可一键恢复。超过 30 天将自动彻底清除。</p>
+    <div id="trashList"></div>
   </div>
 </div>
 
@@ -722,6 +753,19 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
         <span style="font-size:12px;color:var(--brown-light)">明细合计: <b id="cbTotal">¥0.00</b></span>
         <button class="btn btn-ghost btn-sm" onclick="applyCostBreakdown()">汇总到成本</button>
       </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" style="cursor:pointer" onclick="toggleBatchSection()">📦 批次成本（FIFO/加权平均算利润） <span id="batchArrow">▶</span></label>
+    <div id="batchSection" style="display:none">
+      <div id="batchList" class="batch-list"></div>
+      <div class="batch-add">
+        <input type="number" id="batchQty" placeholder="数量" style="width:64px">
+        <input type="number" step="0.01" id="batchUnitCost" placeholder="单价" style="width:74px">
+        <select id="batchSupplier" style="flex:1;min-width:0"></select>
+        <button class="btn btn-sm" onclick="addBatchRow()">＋</button>
+      </div>
+      <div style="font-size:11px;color:var(--brown-light);margin-top:4px">记录每批进货的成本，利润按 FIFO 或加权平均计算；上方"单件成本"留空则取批次均值</div>
     </div>
   </div>
   <div class="form-row-3">
@@ -961,11 +1005,11 @@ function closeImgLightbox(){var lb=document.getElementById('imgLightbox');if(lb)
 var STORAGE_KEY='seafoam_v4';
 var state={
   categories:[],products:[],packaging:[],commissions:[],suppliers:[],
-  expenses:[],sales:[],priceHistory:[],assemblies:[],purchases:[],bundles:[],
+  expenses:[],sales:[],priceHistory:[],assemblies:[],purchases:[],bundles:[],trash:[],
   expenseTypes:['包材','推广','赠品','运费','其他'],
   materialOptions:['铜版纸','白卡纸','牛皮纸','和纸','PVC贴纸','PET贴纸','珠光纸','其他'],
   usageOptions:['手账装饰','贴纸收集','礼物包装','卡片收藏','书签','封口贴','其他'],
-  settings:{platformFee:5,skuCounter:0,bundleSkuCounter:0},
+  settings:{platformFee:5,skuCounter:0,bundleSkuCounter:0,costMethod:'avg',lastBackupDate:'',expectedSales:0,commAmortize:false,storageWarn:true},
   currentCategory:null,currentMoreTab:'expense',expenseType:'包材',
   productView:'grid',saleDateFilter:''
 };
@@ -1027,16 +1071,46 @@ function updateStorageUsage(){
     var raw=localStorage.getItem(STORAGE_KEY)||'';
     var mb=(raw.length*2)/(1024*1024);
     var pct=Math.min(100,mb/5*100);
-    var warn=pct>80?' <span style="color:var(--blush-deep)">（快满了，建议导出备份+减少大图）</span>':'';
-    el.innerHTML='💾 本地已用 '+mb.toFixed(2)+' MB / 5 MB'+warn;
+    var col=pct>80?'var(--blush-deep)':pct>50?'var(--yellow-deep)':'var(--seafoam-deep)';
+    var warn=pct>80?' · 快满了，建议压缩图片或导出备份':'';
+    el.innerHTML='<div style="font-size:11px;color:var(--brown-light);margin-bottom:4px">💾 本地存储 '+mb.toFixed(2)+' MB / 5 MB'+warn+'</div>'+
+      '<div style="height:8px;background:var(--cream-deep);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:6px;transition:width .4s"></div></div>';
+    var ih=document.getElementById('imgHealthStat');
+    if(ih){
+      var cnt=0,isz=0;
+      function walk(o){if(typeof o==='string'){if(o.indexOf('data:image')===0&&o.indexOf('base64')>0){cnt++;isz+=o.length}}else if(Array.isArray(o)){o.forEach(walk)}else if(o&&typeof o==='object'){for(var k in o){if(o.hasOwnProperty(k))walk(o[k])}}}
+      walk(state);
+      ih.innerHTML='📷 本地图片 <b>'+cnt+'</b> 张 · 约 <b>'+(isz*2/1024).toFixed(0)+'</b> KB'+(cnt>0?'（压缩通常可释放 30%~60%）':'');
+    }
   }catch(e){}
+}
+function compressDataUrl(src,maxW,quality,cb){
+  var img=new Image();img.onload=function(){var w=img.width,h=img.height;if(w>maxW){h=Math.round(h*maxW/w);w=maxW}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);try{cb(c.toDataURL('image/jpeg',quality))}catch(e){cb(src)}};img.onerror=function(){cb(src)};img.src=src;
+}
+function compressAllImages(){
+  if(!confirm('将对所有本地图片重新压缩以节省空间（画质略有下降）。继续吗？'))return;
+  var jobs=[];
+  function walk(o){if(typeof o==='string'){if(o.indexOf('data:image')===0&&o.indexOf('base64')>0)jobs.push({obj:null,val:o})}else if(Array.isArray(o)){for(var i=0;i<o.length;i++){var r=walk(o[i]);if(r!==undefined)o[i]=r}}else if(o&&typeof o==='object'){for(var k in o){if(!o.hasOwnProperty(k))continue;var v=o[k];if(typeof v==='string'&&v.indexOf('data:image')===0&&v.indexOf('base64')>0){jobs.push({obj:o,key:k,val:v})}else walk(v)}}}
+  walk(state);
+  var total=jobs.length,done=0,saved=0;
+  if(total===0){toast('没有可压缩的本地图片');return}
+  toast('正在压缩 '+total+' 张图片…');
+  jobs.forEach(function(j){
+    compressDataUrl(j.val,300,0.5,function(out){
+      var finalOut=(out&&out.length<j.val.length)?out:j.val;
+      saved+=(j.val.length-finalOut.length);
+      if(j.obj)j.obj[j.key]=finalOut;
+      done++;
+      if(done===total){saveState();updateStorageUsage();var kb=(saved*2/1024).toFixed(0);toast('压缩完成 🗜️ 释放约 '+kb+' KB');renderProducts();renderMore()}
+    });
+  });
 }
 function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
       categories:state.categories,products:state.products,packaging:state.packaging,
       commissions:state.commissions,suppliers:state.suppliers,expenses:state.expenses,
-      sales:state.sales,priceHistory:state.priceHistory,assemblies:state.assemblies,purchases:state.purchases,bundles:state.bundles,expenseTypes:state.expenseTypes,
+      sales:state.sales,priceHistory:state.priceHistory,assemblies:state.assemblies,purchases:state.purchases,bundles:state.bundles,trash:state.trash,expenseTypes:state.expenseTypes,
       materialOptions:state.materialOptions,usageOptions:state.usageOptions,settings:state.settings
     }));
     updateStorageUsage();
@@ -1068,8 +1142,111 @@ function migrateData(){
   if(!state.settings.bundleSkuCounter)state.settings.bundleSkuCounter=state.bundles.length;
   state.bundles.forEach(function(b,i){if(!b.sku)b.sku='BF-'+String(i+1).padStart(4,'0');if(!b.status)b.status='active';if(b.safetyStock===undefined)b.safetyStock=3;if(!b.items)b.items=[];if(!b.createdAt)b.createdAt=todayStr()});
   state.sales.forEach(function(s){if(!s.itemType)s.itemType='product';if(!s.bundleId)s.bundleId='';if(!s.bundleName)s.bundleName=''});
+  // v5 迁移：批次成本 / 回收站 / 采购结算 / 新设置
+  if(!state.trash)state.trash=[];
+  state.products.forEach(function(p){
+    if(!p.batches)p.batches=[];
+    if(p.batches.length===0&&(p.stock||0)>0&&(p.cost||0)>0)p.batches.push({id:uid(),qty:p.stock,unitCost:p.cost,date:todayStr(),supplierId:p.supplierId||'',note:'初始库存'});
+    p.cost=getAvgCost(p);
+  });
+  state.purchases.forEach(function(p){if(p.settled===undefined)p.settled=false});
+  if(state.settings.costMethod===undefined)state.settings.costMethod='avg';
+  if(state.settings.lastBackupDate===undefined)state.settings.lastBackupDate='';
+  if(state.settings.expectedSales===undefined)state.settings.expectedSales=0;
+  if(state.settings.commAmortize===undefined)state.settings.commAmortize=false;
+  if(state.settings.storageWarn===undefined)state.settings.storageWarn=true;
+  state.trash=state.trash.filter(function(t){var d=daysUntil(t.deletedAt);return d===null||d>-30});
 }
 
+// ========== 批次成本 ==========
+function ensureBatches(p){if(!p.batches)p.batches=[];if(p.batches.length===0&&(p.stock||0)>0&&(p.cost||0)>0)p.batches.push({id:uid(),qty:p.stock,unitCost:p.cost,date:todayStr(),supplierId:p.supplierId||'',note:'初始库存'})}
+function getAvgCost(p){ensureBatches(p);var t=0,q=0;p.batches.forEach(function(b){t+=(b.unitCost||0)*(b.qty||0);q+=(b.qty||0)});return q>0?t/q:(p.cost||0)}
+function fifoCost(p,qty){ensureBatches(p);var rem=qty,cost=0;for(var i=0;i<p.batches.length&&rem>0;i++){var b=p.batches[i];var take=Math.min(b.qty||0,rem);cost+=take*(b.unitCost||0);rem-=take}return cost}
+function costOfSale(p,qty){return (state.settings.costMethod==='fifo')?fifoCost(p,qty):getAvgCost(p)*qty}
+function deductBatches(p,qty){ensureBatches(p);var rem=qty;for(var i=0;i<p.batches.length&&rem>0;i++){var b=p.batches[i];var take=Math.min(b.qty||0,rem);b.qty-=take;rem-=take}p.batches=p.batches.filter(function(b){return(b.qty||0)>0});p.stock=p.batches.reduce(function(s,b){return s+(b.qty||0)},0);p.cost=getAvgCost(p)}
+function addBatch(p,qty,unitCost,supplierId){ensureBatches(p);p.batches.push({id:uid(),qty:qty,unitCost:unitCost,date:todayStr(),supplierId:supplierId||'',note:''});p.stock=p.batches.reduce(function(s,b){return s+(b.qty||0)},0);p.cost=getAvgCost(p)}
+// ========== 回收站 ==========
+function moveToTrash(type,id){
+  var arr=state[type];if(!arr)return false;
+  var idx=arr.findIndex(function(x){return x.id===id});if(idx<0)return false;
+  var item=arr[idx];arr.splice(idx,1);
+  state.trash.push({id:uid(),type:type,data:item,deletedAt:todayStr()});
+  saveState();return true;
+}
+function restoreFromTrash(trashId){
+  var idx=state.trash.findIndex(function(x){return x.id===trashId});if(idx<0)return;
+  var t=state.trash[idx];
+  if(!state[t.type])state[t.type]=[];
+  if(!state[t.type].some(function(x){return x.id===t.data.id}))state[t.type].push(t.data);
+  state.trash.splice(idx,1);saveState();
+}
+function purgeTrashItem(trashId){state.trash=state.trash.filter(function(x){return x.id!==trashId});saveState();}
+var TRASH_TYPE_LABEL={products:'产品',categories:'分类',commissions:'约稿',packaging:'包材',suppliers:'供应商',expenses:'费用',assemblies:'分装',purchases:'采购',bundles:'套组'};
+function trashItemName(t){
+  var d=t.data;if(!d)return '(空)';
+  switch(t.type){
+    case 'products': return (d.name||'未命名')+(d.sku?'（'+d.sku+'）':'');
+    case 'categories': return d.name||'未命名分类';
+    case 'commissions': return (d.artist||'画师')+' · '+(d.desc||d.note||'约稿');
+    case 'packaging': return d.name||'未命名包材';
+    case 'suppliers': return d.name||'未命名供应商';
+    case 'expenses': return (d.type||'费用')+' ¥'+(d.amount||0)+(d.note?' · '+d.note:'');
+    case 'assemblies': return '分装记录';
+    case 'purchases': return '采购记录'+(d.note?' · '+d.note:'');
+    case 'bundles': return d.name||'未命名套组';
+    default: return '项目';
+  }
+}
+function renderTrash(){
+  var list=document.getElementById('trashList');
+  var btn=document.getElementById('emptyTrashBtn');
+  if(state.trash.length===0){if(list)list.innerHTML='<div class="empty"><span class="emoji">🗑️</span>回收站是空的<br>删除的内容会在这里保留 30 天</div>';if(btn)btn.style.display='none';return}
+  if(btn)btn.style.display='inline-block';
+  if(!list)return;
+  list.innerHTML=state.trash.slice().sort(function(a,b){return (b.deletedAt||'').localeCompare(a.deletedAt||'')}).map(function(t){
+    var left=30+daysUntil(t.deletedAt);
+    var leftTxt=left>0?('剩 '+left+' 天'):'即将清除';
+    return '<div class="card" style="margin-bottom:10px;padding:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div style="min-width:0">'+
+          '<div style="font-weight:600;color:var(--brown);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(trashItemName(t))+'</div>'+
+          '<div style="font-size:11px;color:var(--brown-light);margin-top:2px">'+TRASH_TYPE_LABEL[t.type]+' · 删除于 '+(t.deletedAt||'-')+' · '+leftTxt+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'+
+          '<button class="btn btn-primary btn-sm" onclick="restoreFromTrash(\''+t.id+'\');renderTrash()">恢复</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="if(confirm(\'彻底删除无法恢复，确认吗？\')){purgeTrashItem(\''+t.id+'\');renderTrash()}">删除</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function emptyTrash(){
+  if(state.trash.length===0){toast('回收站是空的');return}
+  if(!confirm('确定要彻底清空回收站吗？所有内容将被永久删除，不可恢复！'))return;
+  state.trash=[];saveState();renderTrash();toast('回收站已清空');
+}
+// ========== 产品批次UI ==========
+var tempBatches=[];
+function toggleBatchSection(){var s=document.getElementById('batchSection'),a=document.getElementById('batchArrow');if(s.style.display==='none'){s.style.display='block';a.textContent='▼'}else{s.style.display='none';a.textContent='▶'}}
+function renderBatchList(){
+  var el=document.getElementById('batchList');if(!el)return;
+  if(!tempBatches||tempBatches.length===0){el.innerHTML='<p style="font-size:11px;color:var(--brown-light);margin:4px 0">暂无批次，保存时将按"单件成本×库存"生成初始批次</p>';return}
+  var tot=tempBatches.reduce(function(s,b){return s+(parseFloat(b.qty)||0)},0);
+  var sumc=tempBatches.reduce(function(s,b){return s+(parseFloat(b.unitCost)||0)*(parseFloat(b.qty)||0)},0);
+  el.innerHTML=tempBatches.map(function(b,i){
+    var sup=b.supplierId?state.suppliers.find(function(x){return x.id===b.supplierId}):null;
+    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--cream-deep);font-size:12px"><span style="flex:1">批次'+(i+1)+'：'+(parseFloat(b.qty)||0)+'件 × ¥'+(parseFloat(b.unitCost)||0).toFixed(2)+' '+(sup?'('+esc(sup.name)+')':'')+'</span><span style="color:var(--brown-light)">¥'+((parseFloat(b.unitCost)||0)*(parseFloat(b.qty)||0)).toFixed(2)+'</span><span style="cursor:pointer;color:var(--blush-deep)" onclick="removeBatchRow('+i+')">✕</span></div>';
+  }).join('')+'<div style="font-size:11px;color:var(--brown-light);margin-top:4px">共'+tot+'件 · 平均成本 ¥'+(tot>0?sumc/tot:0).toFixed(2)+'/件</div>';
+}
+function addBatchRow(){
+  var q=parseFloat(document.getElementById('batchQty').value)||0;
+  var u=parseFloat(document.getElementById('batchUnitCost').value)||0;
+  if(q<=0||u<0){toast('请填写批次数量与单价');return}
+  tempBatches.push({id:uid(),qty:q,unitCost:u,date:todayStr(),supplierId:document.getElementById('batchSupplier').value||'',note:''});
+  document.getElementById('batchQty').value='';document.getElementById('batchUnitCost').value='';
+  renderBatchList();
+}
+function removeBatchRow(i){if(tempBatches&&tempBatches[i])tempBatches.splice(i,1);renderBatchList()}
 // ========== 工具 ==========
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},1500)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -1077,6 +1254,7 @@ function fmt(n){return '¥'+(Math.round(n*100)/100).toFixed(2)}
 function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function getCatColor(cat){return CAT_COLORS[cat.color||0]||CAT_COLORS[0]}
 function todayStr(){return new Date().toISOString().slice(0,10)}
+function prevDay(ds){var d=new Date(ds);d.setDate(d.getDate()-1);return d.toISOString().slice(0,10)}
 function daysUntil(ds){if(!ds)return null;var t=new Date(ds),n=new Date();n.setHours(0,0,0,0);t.setHours(0,0,0,0);return Math.round((t-n)/(864e5))}
 function deadlineText(ds){if(!ds)return'';var d=daysUntil(ds);if(d===null)return'';if(d===0)return'今天交稿';if(d===1)return'明天交稿';if(d>0)return'还剩'+d+'天';if(d===-1)return'昨天逾期';return'逾期'+Math.abs(d)+'天'}
 function genSKU(){if(!state.settings.skuCounter)state.settings.skuCounter=0;state.settings.skuCounter++;return 'SF-'+String(state.settings.skuCounter).padStart(4,'0')}
@@ -1097,7 +1275,7 @@ function goPage(p){
   var fab=document.getElementById('fabBtn');
   if(p==='products'){fab.style.display='flex';showCategoryList()}
   else if(p==='sales'){fab.style.display='flex'}
-  else if(p==='more'){fab.style.display=(state.currentMoreTab==='export')?'none':'flex'}
+  else if(p==='more'){fab.style.display=(state.currentMoreTab==='export'||state.currentMoreTab==='trash')?'none':'flex'}
   else{fab.style.display='none'}
   window.scrollTo(0,0);
   if(p==='home')renderHome();
@@ -1122,11 +1300,11 @@ function fabAction(){
 }
 function switchMoreTab(tab){
   state.currentMoreTab=tab;
-  ['expense','commission','packaging','supplier','assembly','purchase','bundle','export'].forEach(function(t){
+  ['expense','commission','packaging','supplier','assembly','purchase','bundle','export','trash'].forEach(function(t){
     var el=document.getElementById('more-'+t);if(el)el.style.display=t===tab?'block':'none';
     var btn=document.getElementById('mtab-'+t);if(btn)btn.classList.toggle('active',t===tab);
   });
-  var fab=document.getElementById('fabBtn');if(fab)fab.style.display=(tab==='export')?'none':'flex';
+  var fab=document.getElementById('fabBtn');if(fab)fab.style.display=(tab==='export'||tab==='trash')?'none':'flex';
   renderMore();}
 function renderMore(){
   var t=state.currentMoreTab;
@@ -1137,7 +1315,8 @@ function renderMore(){
   else if(t==='assembly')renderAssembly();
   else if(t==='purchase')renderPurchases();
   else if(t==='bundle')renderBundles();
-  else if(t==='export')populateExportMonths();
+  else if(t==='export'){populateExportMonths();updateStorageUsage();}
+  else if(t==='trash')renderTrash();
 }
 
 // ========== 首页：经营驾驶舱 ==========
@@ -1157,6 +1336,18 @@ function renderHome(){
   var hgr=document.getElementById('homeGreetingRev');if(hgr)hgr.textContent='¥'+tRev.toFixed(0);
   var hgc=document.getElementById('homeGreetingCount');if(hgc)hgc.textContent=ts.length+' 笔交易';
   document.getElementById('dashTodayProfit').textContent='¥'+tProf.toFixed(0);
+  // 昨日对比
+  var ytd=prevDay(td);
+  var ys=state.sales.filter(function(s){return s.date===ytd});
+  var yRev=ys.reduce(function(s,x){return s+(x.revenue||0)},0);
+  var yProf=ys.reduce(function(s,x){return s+(x.profit||0)},0);
+  function cmpHtml(cur,prev){
+    if(prev>0){var pct=Math.round((cur-prev)/prev*100);var up=cur>=prev;var col=up?'var(--seafoam-deep)':'var(--blush-deep)';return '<span style="color:'+col+'">'+(up?'▲':'▼')+' '+Math.abs(pct)+'%</span> 较昨日'}
+    if(cur>0)return '<span style="color:var(--seafoam-deep)">▲ 昨日无记录</span>';
+    return '<span style="color:var(--brown-light)">较昨日 —</span>';
+  }
+  var rc=document.getElementById('dashTodayRevCmp');if(rc)rc.innerHTML=cmpHtml(tRev,yRev);
+  var pc=document.getElementById('dashTodayProfitCmp');if(pc)pc.innerHTML=cmpHtml(tProf,yProf);
   var ring=document.getElementById('rateRing');if(ring){var C=175.9;ring.style.strokeDashoffset=C*(1-Math.min(100,Math.max(0,tRate))/100);}
   var rl=document.getElementById('rateRingLabel');if(rl)rl.textContent=tRate.toFixed(0)+'%';
   // 本月累计
@@ -1219,20 +1410,28 @@ function renderHome(){
       return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="editProduct(\''+p.id+'\')"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+'</span><span class="status-badge '+(p.stock<=0?'status-out_of_stock':'status-active')+'">'+(p.stock<=0?'缺货':'剩'+p.stock)+'</span></div>';
     }).join('');
   }
-  var ca=state.commissions.filter(function(c){if(c.completed)return false;if(!c.deadline)return false;var d=daysUntil(c.deadline);return d!==null&&d<=3});
-  if(ca.length>0){
-    ah+='<div style="font-size:12px;font-weight:600;color:var(--yellow-deep);margin:8px 0 6px">🎨 约稿提醒 ('+ca.length+')</div>';
-    ah+=ca.map(function(c){
-      var d=daysUntil(c.deadline);var col=d<0?'var(--blush-deep)':d<=1?'var(--blush-deep)':'var(--yellow-deep)';
-      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="editCommission(\''+c.id+'\')"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.artist)+'</span><span style="color:'+col+';font-weight:600">'+deadlineText(c.deadline)+'</span></div>';
-    }).join('');
+  var commAll=state.commissions.filter(function(c){return !c.completed&&c.deadline});
+  var overdueComm=commAll.filter(function(c){return daysUntil(c.deadline)<0});
+  var soonComm=commAll.filter(function(c){return daysUntil(c.deadline)>=0&&daysUntil(c.deadline)<=3});
+  if(overdueComm.length>0){
+    ah+='<div style="font-size:12px;font-weight:600;color:var(--blush-deep);margin:8px 0 6px">🎨 超期约稿 ('+overdueComm.length+')</div>';
+    ah+=overdueComm.map(function(c){return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="editCommission(\''+c.id+'\')"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.artist)+'</span><span style="color:var(--blush-deep);font-weight:600">'+deadlineText(c.deadline)+' 超期</span></div>'}).join('');
+  }
+  if(soonComm.length>0){
+    ah+='<div style="font-size:12px;font-weight:600;color:var(--yellow-deep);margin:8px 0 6px">🎨 约稿提醒 ('+soonComm.length+')</div>';
+    ah+=soonComm.map(function(c){return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="editCommission(\''+c.id+'\')"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.artist)+'</span><span style="color:var(--yellow-deep);font-weight:600">'+deadlineText(c.deadline)+'</span></div>'}).join('');
+  }
+  var upur=(state.purchases||[]).filter(function(p){return p.settled!==true});
+  if(upur.length>0){
+    ah+='<div style="font-size:12px;font-weight:600;color:var(--lavender-deep);margin:8px 0 6px">🛒 未结算采购 ('+upur.length+')</div>';
+    ah+=upur.slice(0,3).map(function(p){return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="goPage(\'more\');setTimeout(function(){switchMoreTab(\'purchase\')},100)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.note||'采购记录')+' · ¥'+(p.totalCost||0)+'</span><span class="status-badge status-active">未结算</span></div>'}).join('');
   }
   var ba=(state.bundles||[]).filter(function(b){return getBundleAvailStock(b)<=(b.safetyStock||3)});
   if(ba.length>0){
     ah+='<div style="font-size:12px;font-weight:600;color:var(--lavender-deep);margin:8px 0 6px">🎁 套组预警 ('+ba.length+')</div>';
     ah+=ba.slice(0,3).map(function(b){var avail=getBundleAvailStock(b);return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer" onclick="goPage(\'more\');setTimeout(function(){switchMoreTab(\'bundle\')},100)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.name)+'</span><span class="status-badge '+(avail<=0?'status-out_of_stock':'status-active')+'">'+(avail<=0?'缺货':'剩'+avail+'套')+'</span></div>'}).join('');
   }
-  if(sw.length===0&&ca.length===0&&ba.length===0)ah='<p style="font-size:12px;color:var(--brown-light);text-align:center;padding:8px">一切正常，暂无预警~ 🐚</p>';
+  if(sw.length===0&&overdueComm.length===0&&soonComm.length===0&&upur.length===0&&ba.length===0)ah='<p style="font-size:12px;color:var(--brown-light);text-align:center;padding:8px">一切正常，暂无待办~ 🐚</p>';
   document.getElementById('dashAlerts').innerHTML=ah;
 }
 
@@ -1333,9 +1532,9 @@ function doDeleteCategory(id){
     var tid=def?def.id:state.categories[0].id;
     if(tid===id){toast('无法删除唯一的分类');return}
     ps.forEach(function(p){p.categoryId=tid});
-  } else {if(!confirm('确定删除此分类吗？'))return}
-  state.categories=state.categories.filter(function(c){return c.id!==id});
-  saveState();closeModal('categoryModal');toast('已删除');renderCategoryList();
+  } else {if(!confirm('确定删除此分类吗？将放入回收站，30 天内可恢复 🗑️'))return}
+  moveToTrash('categories',id);
+  closeModal('categoryModal');toast('已移入回收站 🗑️');renderCategoryList();
 }
 
 // ========== 产品管理 ==========
@@ -1397,6 +1596,7 @@ function openProductModal(id){
   document.getElementById('productModalTitle').textContent=id?'编辑产品':'新增产品';
   var p=id?state.products.find(function(x){return x.id===id}):null;
   if(!p)p={};
+  tempBatches=(p.batches||[]).map(function(b){return {id:b.id,qty:b.qty,unitCost:b.unitCost,date:b.date,supplierId:b.supplierId||'',note:b.note||''}});
   populateProductCategories(p.categoryId||state.currentCategory||'');
   populateProductSuppliers(p.supplierId||'');
   populateMaterialOptions(p.material||'');
@@ -1427,6 +1627,7 @@ function openProductModal(id){
   document.getElementById('prodTotalSold').textContent=st.totalSold+' 件';
   document.getElementById('prodTotalProfit').textContent='¥'+st.totalProfit.toFixed(2);
   document.getElementById('prodDeleteBox').style.display=id?'block':'none';
+  document.getElementById('batchSupplier').innerHTML=document.getElementById('prodSupplier').innerHTML;renderBatchList();
   document.getElementById('productModal').classList.add('show');
 }
 function editProduct(id){openProductModal(id)}
@@ -1446,13 +1647,16 @@ function saveProduct(){
   var imgData=document.getElementById('prodImgData').value;
   var img2Data=document.getElementById('prodImg2Data').value;
   var imgUrl=document.getElementById('prodImgUrl').value.trim();
+  var tb=(tempBatches||[]).map(function(b){return {id:b.id||uid(),qty:parseFloat(b.qty)||0,unitCost:parseFloat(b.unitCost)||0,date:b.date||todayStr(),supplierId:b.supplierId||'',note:b.note||''}});
+  var avgC=tb.length>0?(function(){var t=0,q=0;tb.forEach(function(b){t+=b.unitCost*(b.qty||0);q+=b.qty||0});return q>0?t/q:0})():(parseFloat(document.getElementById('prodCost').value)||0);
   var data={
     id:id||uid(),sku:sku,name:name,categoryId:document.getElementById('prodCategory').value,
     supplierId:document.getElementById('prodSupplier').value,
     size:document.getElementById('prodSize').value.trim(),quantity:document.getElementById('prodQty').value.trim(),
-    material:mat,usage:usg,cost:parseFloat(document.getElementById('prodCost').value)||0,
+    material:mat,usage:usg,cost:avgC,batches:tb,
     price:parseFloat(document.getElementById('prodPrice').value)||0,stock:stock,
     safetyStock:parseInt(document.getElementById('prodSafetyStock').value)||10,
+    stock:(tb.length>0?tb.reduce(function(s,b){return s+(b.qty||0)},0):stock),
     status:status,note:document.getElementById('prodNote').value.trim(),
     image:imgData||imgUrl||'',image2:img2Data,
     costBreakdown:{raw:parseFloat(document.getElementById('cbRaw').value)||0,processing:parseFloat(document.getElementById('cbProcessing').value)||0,packaging:parseFloat(document.getElementById('cbPackaging').value)||0,commission:parseFloat(document.getElementById('cbCommission').value)||0,promo:parseFloat(document.getElementById('cbPromo').value)||0,other:parseFloat(document.getElementById('cbOther').value)||0}
@@ -1461,7 +1665,7 @@ function saveProduct(){
   if(idx>=0)state.products[idx]=data;else state.products.push(data);
   saveState();closeModal('productModal');toast('保存成功~ 🐚');renderProducts();
 }
-function deleteProduct(){var id=document.getElementById('prodId').value;if(!id)return;if(!confirm('确定删除这个产品吗？'))return;state.products=state.products.filter(function(p){return p.id!==id});saveState();closeModal('productModal');renderProducts();toast('已删除')}
+function deleteProduct(){var id=document.getElementById('prodId').value;if(!id)return;if(!confirm('确定删除这个产品吗？将放入回收站，30 天内可恢复 🗑️'))return;moveToTrash('products',id);closeModal('productModal');renderProducts();toast('已移入回收站 🗑️')}
 
 // ========== 销售管理 ==========
 function renderSales(){
@@ -1566,7 +1770,7 @@ function calcSaleTotal(){
     else document.getElementById('saleProfitVal').textContent='';
   } else {
     var prod=state.products.find(function(x){return x.id===id});
-    if(prod&&q>0){var pr=t-(prod.cost||0)*q;var el=document.getElementById('saleProfitVal');el.textContent='利润'+(pr>=0?'+':'')+'¥'+pr.toFixed(2);el.style.color=pr>=0?'var(--seafoam-deep)':'var(--blush-deep)'}
+    if(prod&&q>0){var pr=t-costOfSale(prod,q);var el=document.getElementById('saleProfitVal');el.textContent='利润'+(pr>=0?'+':'')+'¥'+pr.toFixed(2);el.style.color=pr>=0?'var(--seafoam-deep)':'var(--blush-deep)'}
     else document.getElementById('saleProfitVal').textContent='';
   }
 }
@@ -1589,31 +1793,31 @@ function saveSale(){
       if(old){
         if(old.itemType==='bundle'){
           var oldB=state.bundles.find(function(x){return x.id===old.bundleId});
-          if(oldB)oldB.items.forEach(function(it){var pp=state.products.find(function(x){return x.id===it.productId});if(pp){pp.stock=(pp.stock||0)+it.quantity*(old.quantity||0);if(pp.stock>0&&pp.status==='out_of_stock')pp.status='active'}});
+          if(oldB)oldB.items.forEach(function(it){var pp=state.products.find(function(x){return x.id===it.productId});if(pp){addBatch(pp,it.quantity*(old.quantity||0),getAvgCost(pp));if(pp.stock>0&&pp.status==='out_of_stock')pp.status='active'}});
         } else {
-          var op=state.products.find(function(x){return x.id===old.productId});if(op)op.stock=(op.stock||0)+(old.quantity||0);
+          var op=state.products.find(function(x){return x.id===old.productId});if(op)addBatch(op,old.quantity||0,(old.cost||0)/Math.max(1,old.quantity||0));
         }
       }
     }
     if(avail<q){if(!confirm('可售仅剩'+avail+'套，不足'+q+'套。仍要记录？'))return}
-    b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){p.stock=Math.max(0,(p.stock||0)-it.quantity*q);if(p.stock<=0)p.status='out_of_stock';else if(p.status==='out_of_stock')p.status='active'}});
-    var bdata={id:id||uid(),itemType:'bundle',productId:'',bundleId:pid,bundleName:b.name,quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:cost*q,platform:plat,buyer:buyer};
+    b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){deductBatches(p,it.quantity*q);if(p.stock<=0)p.status='out_of_stock';else if(p.status==='out_of_stock')p.status='active'}});
+    var bdata={id:id||uid(),itemType:'bundle',productId:'',bundleId:pid,bundleName:b.name,quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:cost*q,platform:plat,buyer:buyer,components:b.items.map(function(it){return {productId:it.productId,quantity:(it.quantity||0)*q}})};
     if(isEdit){var bidx=state.sales.findIndex(function(x){return x.id===id});if(bidx>=0)state.sales[bidx]=bdata}else state.sales.push(bdata);
     saveState();closeModal('saleModal');toast('套组销售已记录~ 🎁 库存已更新');renderSales();return;
   }
   var p=state.products.find(function(x){return x.id===pid});if(!p){toast('产品不存在');return}
-  var prof=rev-(p.cost||0)*q;
-  if(!isEdit){if((p.stock||0)<q)if(!confirm('库存仅剩'+(p.stock||0)+'件，不足'+q+'件。仍要记录？'))return;p.stock=Math.max(0,(p.stock||0)-q)}
+  var sc=costOfSale(p,q);var prof=rev-sc;
+  if(!isEdit){if((p.stock||0)<q)if(!confirm('库存仅剩'+(p.stock||0)+'件，不足'+q+'件。仍要记录？'))return;deductBatches(p,q)}
   else{var old=state.sales.find(function(x){return x.id===id});if(old){
-    if(old.itemType==='bundle'){var oldB=state.bundles.find(function(x){return x.id===old.bundleId});if(oldB)oldB.items.forEach(function(it){var pp=state.products.find(function(x){return x.id===it.productId});if(pp){pp.stock=(pp.stock||0)+it.quantity*(old.quantity||0);if(pp.stock>0&&pp.status==='out_of_stock')pp.status='active'}})}
-    else{var op=state.products.find(function(x){return x.id===old.productId});if(op)op.stock=(op.stock||0)+(old.quantity||0)}
-  }if(p.stock<q)if(!confirm('库存仅剩'+p.stock+'件，不足'+q+'件。仍要记录？'))return;p.stock=Math.max(0,(p.stock||0)-q)}
+    if(old.itemType==='bundle'){var oldB=state.bundles.find(function(x){return x.id===old.bundleId});if(oldB)oldB.items.forEach(function(it){var pp=state.products.find(function(x){return x.id===it.productId});if(pp){addBatch(pp,it.quantity*(old.quantity||0),getAvgCost(pp));if(pp.stock>0&&pp.status==='out_of_stock')pp.status='active'}})}
+    else{var op=state.products.find(function(x){return x.id===old.productId});if(op)addBatch(op,old.quantity||0,(old.cost||0)/Math.max(1,old.quantity||0))}
+  }if(p.stock<q)if(!confirm('库存仅剩'+p.stock+'件，不足'+q+'件。仍要记录？'))return;deductBatches(p,q)}
   if(p.stock<=0)p.status='out_of_stock';else if(p.status==='out_of_stock')p.status='active';
-  var data={id:id||uid(),itemType:'product',productId:pid,bundleId:'',bundleName:'',quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:(p.cost||0)*q,platform:plat,buyer:buyer};
+  var data={id:id||uid(),itemType:'product',productId:pid,bundleId:'',bundleName:'',quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:sc,platform:plat,buyer:buyer};
   if(isEdit){var idx=state.sales.findIndex(function(x){return x.id===id});if(idx>=0)state.sales[idx]=data}else state.sales.push(data);
   saveState();closeModal('saleModal');toast('销售已记录~ 🛒 库存已更新');renderSales();
 }
-function deleteSale(){var id=document.getElementById('saleId').value;if(!id)return;if(!confirm('删除此销售记录将恢复库存。确认删除？'))return;var s=state.sales.find(function(x){return x.id===id});if(!s)return;if(s.itemType==='bundle'){var b=state.bundles.find(function(x){return x.id===s.bundleId});if(b)b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){p.stock=(p.stock||0)+it.quantity*(s.quantity||0);if(p.stock>0&&p.status==='out_of_stock')p.status='active'}})}else{var p=state.products.find(function(x){return x.id===s.productId});if(p){p.stock=(p.stock||0)+(s.quantity||0);if(p.stock>0&&p.status==='out_of_stock')p.status='active'}}state.sales=state.sales.filter(function(x){return x.id!==id});saveState();closeModal('saleModal');renderSales();toast('已删除，库存已恢复')}
+function deleteSale(){var id=document.getElementById('saleId').value;if(!id)return;if(!confirm('删除此销售记录将恢复库存。确认删除？'))return;var s=state.sales.find(function(x){return x.id===id});if(!s)return;if(s.itemType==='bundle'){var b=state.bundles.find(function(x){return x.id===s.bundleId});if(b)b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){addBatch(p,it.quantity*(s.quantity||0),getAvgCost(p));if(p.stock>0&&p.status==='out_of_stock')p.status='active'}})}else{var p=state.products.find(function(x){return x.id===s.productId});if(p){addBatch(p,s.quantity||0,(s.cost||0)/Math.max(1,s.quantity||0));if(p.stock>0&&p.status==='out_of_stock')p.status='active'}}state.sales=state.sales.filter(function(x){return x.id!==id});saveState();closeModal('saleModal');renderSales();toast('已删除，库存已恢复')}
 
 // ========== 约稿管理 ==========
 function renderCommissions(){
@@ -1657,7 +1861,7 @@ function saveCommission(){
   if(idx>=0)state.commissions[idx]=data;else state.commissions.push(data);
   saveState();closeModal('commissionModal');toast('保存成功~ 🎨');renderCommissions();
 }
-function deleteCommission(){var id=document.getElementById('commId').value;if(!id)return;if(!confirm('确定删除这条约稿记录吗？'))return;state.commissions=state.commissions.filter(function(c){return c.id!==id});saveState();closeModal('commissionModal');renderCommissions();toast('已删除')}
+function deleteCommission(){var id=document.getElementById('commId').value;if(!id)return;if(!confirm('确定删除这条约稿记录吗？将放入回收站，30 天内可恢复 🗑️'))return;moveToTrash('commissions',id);closeModal('commissionModal');renderCommissions();toast('已移入回收站 🗑️')}
 
 // ========== 包材管理 ==========
 function renderPkg(){
@@ -1691,7 +1895,7 @@ function savePkg(){
   if(idx>=0)state.packaging[idx]=data;else state.packaging.push(data);
   saveState();closeModal('pkgModal');toast('保存成功~ 🐚');renderPkg();
 }
-function deletePkg(){var id=document.getElementById('pkgId').value;if(!id)return;if(!confirm('确定删除这个包材吗？'))return;state.packaging=state.packaging.filter(function(p){return p.id!==id});saveState();closeModal('pkgModal');renderPkg();toast('已删除')}
+function deletePkg(){var id=document.getElementById('pkgId').value;if(!id)return;if(!confirm('确定删除这个包材吗？将放入回收站，30 天内可恢复 🗑️'))return;moveToTrash('packaging',id);closeModal('pkgModal');renderPkg();toast('已移入回收站 🗑️')}
 
 // ========== 费用管理 ==========
 function selectExpType(idx){state.expenseType=state.expenseTypes[idx]||state.expenseTypes[0];renderExpTypePresets(state.expenseType)}
@@ -1751,7 +1955,7 @@ function saveExpense(){
   if(idx>=0)state.expenses[idx]=data;else state.expenses.push(data);
   saveState();closeModal('expenseModal');toast('记录成功~ 💰');renderExpenses();
 }
-function deleteExpense(){var id=document.getElementById('expId').value;if(!id)return;if(!confirm('确定删除这笔费用吗？'))return;state.expenses=state.expenses.filter(function(e){return e.id!==id});saveState();renderExpenses();toast('已删除');closeModal('expenseModal')}
+function deleteExpense(){var id=document.getElementById('expId').value;if(!id)return;if(!confirm('确定删除这笔费用吗？将放入回收站，30 天内可恢复 🗑️'))return;moveToTrash('expenses',id);renderExpenses();toast('已移入回收站 🗑️');closeModal('expenseModal')}
 function renderExpenses(){
   var sg=document.getElementById('expenseStatGrid');
   sg.innerHTML=state.expenseTypes.slice(0,4).map(function(t,i){
@@ -1800,7 +2004,7 @@ function saveSupplier(){
   if(idx>=0)state.suppliers[idx]=data;else state.suppliers.push(data);
   saveState();closeModal('supplierModal');toast('保存成功~ 🏪');renderSuppliers();
 }
-function deleteSupplier(){var id=document.getElementById('supId').value;if(!id)return;if(!confirm('确定删除这个供应商吗？关联产品将变为「无供应商」'))return;state.suppliers=state.suppliers.filter(function(s){return s.id!==id});state.products.forEach(function(p){if(p.supplierId===id)p.supplierId=''});saveState();closeModal('supplierModal');renderSuppliers();toast('已删除')}
+function deleteSupplier(){var id=document.getElementById('supId').value;if(!id)return;if(!confirm('确定删除这个供应商吗？将放入回收站，30 天内可恢复（关联产品保留引用，恢复后自动连回）🗑️'))return;moveToTrash('suppliers',id);closeModal('supplierModal');renderSuppliers();toast('已移入回收站 🗑️')}
 
 // ========== 分装管理 ==========
 function renderAssembly(){
@@ -1949,14 +2153,9 @@ function editAssembly(id){openAssemblyModal(id)}
 function deleteAssembly(){
   var id=document.getElementById('asmId').value;if(!id)return;
   var a=state.assemblies.find(function(x){return x.id===id});if(!a)return;
-  var src=state.products.find(function(p){return p.id===a.sourceProductId});
-  var tgt=state.products.find(function(p){return p.id===a.targetProductId});
-  if(!confirm('删除后：散卡返还'+(a.sourceQty||0)+'张，成品扣除'+(a.targetQty||0)+'包。确认删除？'))return;
-  if(src)src.stock=(src.stock||0)+(a.sourceQty||0);
-  if(tgt){tgt.stock=(tgt.stock||0)-(a.targetQty||0);if(tgt.stock<0)tgt.stock=0;if(tgt.status!=='paused')tgt.status=tgt.stock>0?'active':'out_of_stock'}
-  if(src&&src.status!=='paused')src.status=src.stock>0?'active':'out_of_stock';
-  state.assemblies=state.assemblies.filter(function(x){return x.id!==id});
-  saveState();closeModal('assemblyModal');renderAssembly();toast('已删除分装记录');
+  if(!confirm('确定删除这条分装记录吗？将放入回收站，30 天内可恢复（库存不会自动变动）🗑️'))return;
+  moveToTrash('assemblies',id);
+  closeModal('assemblyModal');renderAssembly();toast('已移入回收站 🗑️');
 }
 
 // ========== 采购进货 ==========
@@ -2076,16 +2275,9 @@ function savePurchase(){
 function deletePurchase(){
   var id=document.getElementById('purId').value;if(!id)return;
   var p=state.purchases.find(function(x){return x.id===id});if(!p)return;
-  if(!confirm('删除后库存将扣减'+(p.qty||0)+' '+(p.itemType==='packaging'?'个':'件')+'。确认删除？'))return;
-  if(p.itemType==='product'){
-    var prod=state.products.find(function(x){return x.id===p.itemId});
-    if(prod){prod.stock=(prod.stock||0)-(p.qty||0);if(prod.stock<0)prod.stock=0;if(prod.status!=='inactive')prod.status=prod.stock>0?'active':'out_of_stock'}
-  } else {
-    var pk=state.packaging.find(function(x){return x.id===p.itemId});
-    if(pk){pk.stock=(pk.stock||0)-(p.qty||0);if(pk.stock<0)pk.stock=0}
-  }
-  state.purchases=state.purchases.filter(function(x){return x.id!==id});
-  saveState();closeModal('purchaseModal');renderPurchases();toast('已删除采购记录');
+  if(!confirm('确定删除这条采购记录吗？将放入回收站，30 天内可恢复（库存不会自动变动）🗑️'))return;
+  moveToTrash('purchases',id);
+  closeModal('purchaseModal');renderPurchases();toast('已移入回收站 🗑️');
 }
 
 // ========== 组合套组 ==========
@@ -2106,7 +2298,7 @@ function getBundleCost(b){
   return b.items.reduce(function(s,it){
     if(it.productDeleted)return s+(it.unitCost||0)*(it.quantity||0);
     var p=state.products.find(function(x){return x.id===it.productId});
-    var cost=p?(p.cost||0):(it.unitCost||0);
+    var cost=p?getAvgCost(p):(it.unitCost||0);
     return s+cost*(it.quantity||0);
   },0);
 }
@@ -2205,10 +2397,10 @@ function editBundle(id){openBundleModal(id)}
 function deleteBundle(){
   var id=document.getElementById('bdlId').value;if(!id)return;
   var bs=state.sales.filter(function(s){return s.itemType==='bundle'&&s.bundleId===id});
-  if(bs.length>0){if(!confirm('此套组有 '+bs.length+' 条销售记录，删除后历史记录仍保留但套组将不可用。确认删除？'))return}
-  else{if(!confirm('确定删除此套组吗？'))return}
-  state.bundles=state.bundles.filter(function(b){return b.id!==id});
-  saveState();closeModal('bundleModal');renderBundles();toast('已删除');
+  if(bs.length>0){if(!confirm('此套组有 '+bs.length+' 条销售记录，删除后历史记录仍保留但套组将放入回收站。确认删除？'))return}
+  else{if(!confirm('确定删除此套组吗？将放入回收站，30 天内可恢复 🗑️'))return}
+  moveToTrash('bundles',id);
+  closeModal('bundleModal');renderBundles();toast('已移入回收站 🗑️');
 }
 
 // ========== 智能定价计算器 ==========
@@ -2255,6 +2447,10 @@ function initCalc(){
   var sel=document.getElementById('calcProduct'),cur=sel.value;
   sel.innerHTML='<option value="">— 请选择产品 —</option>'+state.products.map(function(p){var c=state.categories.find(function(x){return x.id===p.categoryId});return'<option value="'+p.id+'">'+(c?c.name+' / ':'')+esc(p.name)+'</option>'}).join('');
   if(cur)sel.value=cur;
+  document.getElementById('costMethodSel').value=state.settings.costMethod||'avg';
+  document.getElementById('calcExpectedSales').value=state.settings.expectedSales||0;
+  document.getElementById('calcCommAmortize').checked=!!state.settings.commAmortize;
+  document.getElementById('calcMarginSlider').value=document.getElementById('calcMargin').value||40;
   renderCommPoolList();
   onCalcProductChange();
 }
@@ -2287,12 +2483,16 @@ function allocCommByQty(){
   document.getElementById('calcComm').value=pu.toFixed(2);
   calcPrice();toast('已按'+st+'件库存分摊，每件¥'+pu.toFixed(2));
 }
+function setCostMethod(v){state.settings.costMethod=v;saveState();toast('成本计算方式：'+(v==='fifo'?'先进先出 FIFO':'加权平均'));}
+function onExpectedSalesChange(){state.settings.expectedSales=parseFloat(document.getElementById('calcExpectedSales').value)||0;saveState();if(state.settings.commAmortize)calcPrice();}
+function onCommAmortizeChange(){state.settings.commAmortize=document.getElementById('calcCommAmortize').checked;saveState();calcPrice();}
 function calcPrice(){
   var cost=parseFloat(document.getElementById('calcCost').value)||0;
   var pkg=parseFloat(document.getElementById('calcPkg').value)||0;
   var promo=parseFloat(document.getElementById('calcPromo').value)||0;
   var gift=parseFloat(document.getElementById('calcGift').value)||0;
   var comm=parseFloat(document.getElementById('calcComm').value)||0;
+  if(state.settings.commAmortize){var es=parseFloat(document.getElementById('calcExpectedSales').value)||0;if(es>0)comm=getSelectedCommTotal()/es;}
   var ship=parseFloat(document.getElementById('calcShip').value)||0;
   var feeRate=(parseFloat(document.getElementById('calcFee').value)||0)/100;
   var margin=(parseFloat(document.getElementById('calcMargin').value)||0)/100;
@@ -2394,8 +2594,25 @@ function exportBackup(){
     toast('已导出完整备份');
   }catch(e){toast('导出失败')}
 }
+function autoBackupIfNeeded(){
+  var today=todayStr();
+  if(state.settings.lastBackupDate===today)return;
+  try{
+    var data={
+      categories:state.categories,products:state.products,packaging:state.packaging,
+      commissions:state.commissions,suppliers:state.suppliers,expenses:state.expenses,
+      sales:state.sales,priceHistory:state.priceHistory,assemblies:state.assemblies,purchases:state.purchases,bundles:state.bundles,expenseTypes:state.expenseTypes,
+      materialOptions:state.materialOptions,usageOptions:state.usageOptions,settings:state.settings
+    };
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='Seafoam自动备份_'+today+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    state.settings.lastBackupDate=today;saveState();
+    toast('已自动备份到下载文件夹 💾');
+  }catch(e){/* 自动备份失败不影响正常使用 */}
+}
 function unionArr(a,b){var s=(a||[]).slice();(b||[]).forEach(function(x){if(s.indexOf(x)<0)s.push(x)});return s}
-function importMerge(input){
+function startImportWizard(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(ev){
@@ -2403,51 +2620,76 @@ function importMerge(input){
       var inc=JSON.parse(ev.target.result);
       var entKeys=['categories','products','packaging','commissions','suppliers','expenses','sales','priceHistory','assemblies','purchases','bundles'];
       entKeys.forEach(function(k){if(!inc[k])inc[k]=[]});
-      // 1) 建立 id 重映射：同名产品/分类复用已有 id，其余生成新 id
-      var map={};
-      inc.products.forEach(function(p){
-        var ex=state.products.find(function(x){return x.name===p.name&&(x.sku?x.sku===p.sku:true)});
-        map[p.id]=ex?ex.id:uid();
-      });
-      inc.categories.forEach(function(c){
-        var ex=state.categories.find(function(x){return x.name===c.name});
-        map[c.id]=ex?ex.id:uid();
-      });
-      ['packaging','commissions','suppliers','expenses','sales','priceHistory','assemblies','purchases','bundles'].forEach(function(k){
-        inc[k].forEach(function(r){map[r.id]=uid()});
-      });
-      // 2) 递归重映射所有外键（值为 map 中的 key 则替换，兼容嵌套 items）
-      function remap(o){
-        if(Array.isArray(o)){o.forEach(function(v){remap(v)})}
-        else if(o&&typeof o==='object'){for(var key in o){if(o.hasOwnProperty(key)){if(typeof o[key]==='object'&&o[key]!==null)remap(o[key]);else if(typeof o[key]==='string'&&map[o[key]])o[key]=map[o[key]]}}}
-        return o;
-      }
-      function clone(r){return remap(JSON.parse(JSON.stringify(r)))}
-      // 3) 合并（产品/分类若命中已有不重复追加）
-      var added={products:0,categories:0,packaging:0,commissions:0,suppliers:0,expenses:0,sales:0,priceHistory:0,assemblies:0,purchases:0,bundles:0};
-      inc.categories.forEach(function(c){if(!state.categories.find(function(x){return x.id===map[c.id]})){state.categories.push(clone(c));added.categories++}});
-      inc.products.forEach(function(p){if(!state.products.find(function(x){return x.id===map[p.id]})){state.products.push(clone(p));added.products++}});
-      ['packaging','commissions','suppliers'].forEach(function(k){inc[k].forEach(function(r){state[k].push(clone(r));added[k]++})});
-      function saleSig(s){var p=state.products.find(function(x){return x.id===s.productId});var nm=p?p.name:(s.bundleName||'套组');return [s.date,nm,s.quantity,s.buyer,(s.revenue||0).toFixed(2)].join('|')}
-      inc.sales.forEach(function(s){
-        var rs=clone(s);var sig=saleSig(rs);
-        if(!state.sales.some(function(x){return saleSig(x)===sig})){state.sales.push(rs);added.sales++}
-      });
-      ['expenses','priceHistory','assemblies','purchases','bundles'].forEach(function(k){inc[k].forEach(function(r){state[k].push(clone(r));added[k]++})});
-      state.expenseTypes=unionArr(state.expenseTypes,inc.expenseTypes||[]);
-      state.materialOptions=unionArr(state.materialOptions,inc.materialOptions||[]);
-      state.usageOptions=unionArr(state.usageOptions,inc.usageOptions||[]);
-      if(inc.settings){
-        state.settings.skuCounter=Math.max(state.settings.skuCounter||0,inc.settings.skuCounter||0);
-        state.settings.bundleSkuCounter=Math.max(state.settings.bundleSkuCounter||0,inc.settings.bundleSkuCounter||0);
-      }
-      saveState();
-      renderHome();renderProducts();renderSales();renderMore();
-      toast('合并完成 ✓ 新增 产品'+added.products+' / 销售'+added.sales+' / 采购'+added.purchases+' / 费用'+added.expenses+' / 套组'+added.bundles+' / 分装'+added.assemblies);
-    }catch(e){console.error(e);toast('合并失败：文件格式不正确')}
+      window.__importInc=inc;
+      buildImportWizard();
+      document.getElementById('importWizard').classList.add('show');
+    }catch(e){toast('文件解析失败：不是有效的备份 JSON');}
     input.value='';
   };
   reader.readAsText(file);
+}
+function findIncProduct(inc,s){return inc.products.find(function(x){return x.id===s.productId})}
+function buildImportWizard(){
+  var inc=window.__importInc;if(!inc)return;
+  var matchedProd=0,newProd=0;
+  inc.products.forEach(function(p){if(state.products.find(function(x){return x.name===p.name&&(x.sku?x.sku===p.sku:true)}))matchedProd++;else newProd++;});
+  function saleSigLocal(s,prodList){var p=prodList.find(function(x){return x.id===s.productId});var nm=p?p.name:(s.bundleName||'套组');return [s.date,nm,s.quantity,s.buyer,(s.revenue||0).toFixed(2)].join('|')}
+  var newSale=inc.sales.filter(function(s){var sig=saleSigLocal(s,inc.products);return !state.sales.some(function(x){return saleSigLocal(x,state.products)===sig})}).length;
+  var sum='<div class="card" style="background:var(--cream);padding:10px;margin-bottom:10px">';
+  sum+='<div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:6px">📊 将导入的内容</div>';
+  sum+='<div style="font-size:12px;color:var(--brown-light);line-height:1.9">';
+  sum+='产品：新增 <b style="color:var(--seafoam-deep)">'+newProd+'</b> / 已有同名 <b style="color:var(--lavender-deep)">'+matchedProd+'</b><br>';
+  sum+='销售记录：新增 <b style="color:var(--seafoam-deep)">'+newSale+'</b><br>';
+  sum+='采购 '+inc.purchases.length+' · 费用 '+inc.expenses.length+' · 约稿 '+inc.commissions.length+' · 套组 '+inc.bundles.length+' · 分装 '+inc.assemblies.length+'<br>';
+  sum+='分类 '+inc.categories.length+' · 供应商 '+inc.suppliers.length;
+  sum+='</div></div>';
+  document.getElementById('iwSummary').innerHTML=sum;
+  var catHtml='<div style="font-size:13px;font-weight:700;color:var(--brown);margin:6px 0 4px">🗂️ 分类映射（同名默认归并，可手动调整）</div>';
+  if(inc.categories.length===0)catHtml+='<div style="font-size:12px;color:var(--brown-light)">无分类</div>';
+  inc.categories.forEach(function(c){
+    var ex=state.categories.find(function(x){return x.name===c.name});
+    catHtml+='<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px"><span style="width:96px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.name)+'</span><select class="form-select" data-cat="'+c.id+'" style="flex:1;font-size:12px"><option value="__NEW__"'+(ex?'':' selected')+'>＋ 新建：'+esc(c.name)+'</option>';
+    state.categories.forEach(function(x){catHtml+='<option value="'+x.id+'"'+(ex&&ex.id===x.id?' selected':'')+'>归并到：'+esc(x.name)+'</option>'});
+    catHtml+='</select></div>';
+  });
+  document.getElementById('iwCatMap').innerHTML=catHtml;
+  var supHtml='<div style="font-size:13px;font-weight:700;color:var(--brown);margin:10px 0 4px">🏪 供应商映射</div>';
+  if(inc.suppliers.length===0)supHtml+='<div style="font-size:12px;color:var(--brown-light)">无供应商</div>';
+  inc.suppliers.forEach(function(s){
+    var ex=state.suppliers.find(function(x){return x.name===s.name});
+    supHtml+='<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px"><span style="width:96px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(s.name)+'</span><select class="form-select" data-sup="'+s.id+'" style="flex:1;font-size:12px"><option value="__NEW__"'+(ex?'':' selected')+'>＋ 新建：'+esc(s.name)+'</option>';
+    state.suppliers.forEach(function(x){supHtml+='<option value="'+x.id+'"'+(ex&&ex.id===x.id?' selected':'')+'>归并到：'+esc(x.name)+'</option>'});
+    supHtml+='</select></div>';
+  });
+  document.getElementById('iwSupMap').innerHTML=supHtml;
+}
+function doImportMerge(){
+  var inc=window.__importInc;if(!inc){closeModal('importWizard');return;}
+  var catMap={},supMap={};
+  document.querySelectorAll('#iwCatMap select[data-cat]').forEach(function(sel){catMap[sel.getAttribute('data-cat')]=sel.value});
+  document.querySelectorAll('#iwSupMap select[data-sup]').forEach(function(sel){supMap[sel.getAttribute('data-sup')]=sel.value});
+  var map={};
+  inc.categories.forEach(function(c){var ch=catMap[c.id]||'__NEW__';map[c.id]=(ch==='__NEW__')?uid():ch;});
+  inc.suppliers.forEach(function(s){var ch=supMap[s.id]||'__NEW__';map[s.id]=(ch==='__NEW__')?uid():ch;});
+  inc.products.forEach(function(p){var ex=state.products.find(function(x){return x.name===p.name&&(x.sku?x.sku===p.sku:true)});map[p.id]=ex?ex.id:uid();});
+  ['packaging','commissions','expenses','sales','priceHistory','assemblies','purchases','bundles'].forEach(function(k){inc[k].forEach(function(r){map[r.id]=uid()})});
+  function remap(o){if(Array.isArray(o)){o.forEach(function(v){remap(v)})}else if(o&&typeof o==='object'){for(var key in o){if(o.hasOwnProperty(key)){if(typeof o[key]==='object'&&o[key]!==null)remap(o[key]);else if(typeof o[key]==='string'&&map[o[key]])o[key]=map[o[key]]}}}return o}
+  function clone(r){return remap(JSON.parse(JSON.stringify(r)))}
+  var added={products:0,categories:0,packaging:0,commissions:0,suppliers:0,expenses:0,sales:0,priceHistory:0,assemblies:0,purchases:0,bundles:0};
+  inc.categories.forEach(function(c){var t=map[c.id];if(!state.categories.find(function(x){return x.id===t})){state.categories.push(clone(c));added.categories++}});
+  inc.suppliers.forEach(function(s){var t=map[s.id];if(!state.suppliers.find(function(x){return x.id===t})){state.suppliers.push(clone(s));added.suppliers++}});
+  inc.products.forEach(function(p){if(!state.products.find(function(x){return x.id===map[p.id]})){state.products.push(clone(p));added.products++}});
+  ['packaging','commissions'].forEach(function(k){inc[k].forEach(function(r){state[k].push(clone(r));added[k]++})});
+  function saleSig(s){var p=state.products.find(function(x){return x.id===s.productId});var nm=p?p.name:(s.bundleName||'套组');return [s.date,nm,s.quantity,s.buyer,(s.revenue||0).toFixed(2)].join('|')}
+  inc.sales.forEach(function(s){var rs=clone(s);var sig=saleSig(rs);if(!state.sales.some(function(x){return saleSig(x)===sig})){state.sales.push(rs);added.sales++}});
+  ['expenses','priceHistory','assemblies','purchases','bundles'].forEach(function(k){inc[k].forEach(function(r){state[k].push(clone(r));added[k]++})});
+  state.expenseTypes=unionArr(state.expenseTypes,inc.expenseTypes||[]);
+  state.materialOptions=unionArr(state.materialOptions,inc.materialOptions||[]);
+  state.usageOptions=unionArr(state.usageOptions,inc.usageOptions||[]);
+  if(inc.settings){state.settings.skuCounter=Math.max(state.settings.skuCounter||0,inc.settings.skuCounter||0);state.settings.bundleSkuCounter=Math.max(state.settings.bundleSkuCounter||0,inc.settings.bundleSkuCounter||0);}
+  saveState();renderHome();renderProducts();renderSales();renderMore();
+  closeModal('importWizard');window.__importInc=null;
+  toast('合并完成 ✓ 新增 产品'+added.products+' / 销售'+added.sales+' / 采购'+added.purchases+' / 费用'+added.expenses+' / 套组'+added.bundles+' / 分装'+added.assemblies);
 }
 
 // ========== 图片处理 ==========
@@ -2476,6 +2718,7 @@ document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener(
 function loadApp(){
   loadState();migrateData();renderHome();
   updateStorageUsage();
+  autoBackupIfNeeded();
   if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(function(){})}
 }
 function initLock(){
@@ -2558,5 +2801,20 @@ function showInstallBanner(){
 }
 window.addEventListener('appinstalled',function(){localStorage.setItem('pwa_installed','1');toast('安装成功！桌面已添加图标 🐚')});
 </script>
+
+<!-- 导入预览向导 -->
+<div class="modal-mask" id="importWizard"><div class="modal" style="max-width:520px;max-height:84vh;overflow:auto">
+  <div class="modal-header"><h2>📥 导入预览向导</h2><button class="modal-close" onclick="closeModal('importWizard')">×</button></div>
+  <p style="font-size:11px;color:var(--brown-light);margin:-4px 0 8px">先确认将要导入的内容，并手动映射分类 / 供应商，避免重复建数据。</p>
+  <div id="iwSummary"></div>
+  <div id="iwCatMap"></div>
+  <div id="iwSupMap"></div>
+  <div style="height:8px"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ghost btn-block" onclick="closeModal('importWizard')">取消</button>
+    <button class="btn btn-primary btn-block" onclick="doImportMerge()">✅ 确认合并</button>
+  </div>
+</div></div>
+
 </body>
 </html>
