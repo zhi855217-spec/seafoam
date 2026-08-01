@@ -516,6 +516,15 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
       <button class="btn btn-primary btn-block" onclick="exportSalesCSV()">📥 导出销售报表 (CSV/Excel)</button>
       <p style="font-size:11px;color:var(--brown-light);margin-top:8px;text-align:center">CSV文件可用Excel直接打开</p>
     </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">👥 多人协作 · 数据合并</div>
+      <p style="font-size:12px;color:var(--brown-light);line-height:1.6;margin-bottom:10px">各自在本机记录，需要汇总时：① 对方点「导出完整备份」把文件发你；② 你点「导入并合并」，自动并入对方的销售/采购/费用等记录（同名产品会自动归并，不会重复建商品）。</p>
+      <button class="btn btn-block" onclick="exportBackup()">📦 导出完整备份 (JSON)</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-block" onclick="document.getElementById('mergeFile').click()">📥 导入并合并备份 (JSON)</button>
+      <input type="file" id="mergeFile" accept=".json,application/json" style="display:none" onchange="importMerge(this)">
+      <p style="font-size:11px;color:var(--brown-light);margin-top:8px;text-align:center">合并前建议先「导出完整备份」留存，防止误操作</p>
+    </div>
   </div>
 </div>
 
@@ -2186,6 +2195,77 @@ function exportSalesCSV(){
   var url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='Seafoam销售报表_'+m+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   toast('已导出'+ss.length+'笔销售记录');
+}
+
+// ========== 备份导出 / 导入合并 ==========
+function exportBackup(){
+  try{
+    var data={
+      categories:state.categories,products:state.products,packaging:state.packaging,
+      commissions:state.commissions,suppliers:state.suppliers,expenses:state.expenses,
+      sales:state.sales,priceHistory:state.priceHistory,assemblies:state.assemblies,purchases:state.purchases,bundles:state.bundles,expenseTypes:state.expenseTypes,
+      materialOptions:state.materialOptions,usageOptions:state.usageOptions,settings:state.settings
+    };
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='Seafoam备份_'+todayStr()+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    toast('已导出完整备份');
+  }catch(e){toast('导出失败')}
+}
+function unionArr(a,b){var s=(a||[]).slice();(b||[]).forEach(function(x){if(s.indexOf(x)<0)s.push(x)});return s}
+function importMerge(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var inc=JSON.parse(ev.target.result);
+      var entKeys=['categories','products','packaging','commissions','suppliers','expenses','sales','priceHistory','assemblies','purchases','bundles'];
+      entKeys.forEach(function(k){if(!inc[k])inc[k]=[]});
+      // 1) 建立 id 重映射：同名产品/分类复用已有 id，其余生成新 id
+      var map={};
+      inc.products.forEach(function(p){
+        var ex=state.products.find(function(x){return x.name===p.name&&(x.sku?x.sku===p.sku:true)});
+        map[p.id]=ex?ex.id:uid();
+      });
+      inc.categories.forEach(function(c){
+        var ex=state.categories.find(function(x){return x.name===c.name});
+        map[c.id]=ex?ex.id:uid();
+      });
+      ['packaging','commissions','suppliers','expenses','sales','priceHistory','assemblies','purchases','bundles'].forEach(function(k){
+        inc[k].forEach(function(r){map[r.id]=uid()});
+      });
+      // 2) 递归重映射所有外键（值为 map 中的 key 则替换，兼容嵌套 items）
+      function remap(o){
+        if(Array.isArray(o)){o.forEach(function(v){remap(v)})}
+        else if(o&&typeof o==='object'){for(var key in o){if(o.hasOwnProperty(key)){if(typeof o[key]==='object'&&o[key]!==null)remap(o[key]);else if(typeof o[key]==='string'&&map[o[key]])o[key]=map[o[key]]}}}
+        return o;
+      }
+      function clone(r){return remap(JSON.parse(JSON.stringify(r)))}
+      // 3) 合并（产品/分类若命中已有不重复追加）
+      var added={products:0,categories:0,packaging:0,commissions:0,suppliers:0,expenses:0,sales:0,priceHistory:0,assemblies:0,purchases:0,bundles:0};
+      inc.categories.forEach(function(c){if(!state.categories.find(function(x){return x.id===map[c.id]})){state.categories.push(clone(c));added.categories++}});
+      inc.products.forEach(function(p){if(!state.products.find(function(x){return x.id===map[p.id]})){state.products.push(clone(p));added.products++}});
+      ['packaging','commissions','suppliers'].forEach(function(k){inc[k].forEach(function(r){state[k].push(clone(r));added[k]++})});
+      function saleSig(s){var p=state.products.find(function(x){return x.id===s.productId});var nm=p?p.name:(s.bundleName||'套组');return [s.date,nm,s.quantity,s.buyer,(s.revenue||0).toFixed(2)].join('|')}
+      inc.sales.forEach(function(s){
+        var rs=clone(s);var sig=saleSig(rs);
+        if(!state.sales.some(function(x){return saleSig(x)===sig})){state.sales.push(rs);added.sales++}
+      });
+      ['expenses','priceHistory','assemblies','purchases','bundles'].forEach(function(k){inc[k].forEach(function(r){state[k].push(clone(r));added[k]++})});
+      state.expenseTypes=unionArr(state.expenseTypes,inc.expenseTypes||[]);
+      state.materialOptions=unionArr(state.materialOptions,inc.materialOptions||[]);
+      state.usageOptions=unionArr(state.usageOptions,inc.usageOptions||[]);
+      if(inc.settings){
+        state.settings.skuCounter=Math.max(state.settings.skuCounter||0,inc.settings.skuCounter||0);
+        state.settings.bundleSkuCounter=Math.max(state.settings.bundleSkuCounter||0,inc.settings.bundleSkuCounter||0);
+      }
+      saveState();
+      renderHome();renderProducts();renderSales();renderMore();
+      toast('合并完成 ✓ 新增 产品'+added.products+' / 销售'+added.sales+' / 采购'+added.purchases+' / 费用'+added.expenses+' / 套组'+added.bundles+' / 分装'+added.assemblies);
+    }catch(e){console.error(e);toast('合并失败：文件格式不正确')}
+    input.value='';
+  };
+  reader.readAsText(file);
 }
 
 // ========== 图片处理 ==========
