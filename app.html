@@ -2643,40 +2643,65 @@ function onOcrFile(input){
   };
   reader.readAsDataURL(file);
 }
+// 图像预处理：放大 + 灰度 + 对比度增强，提升截图类图片的 OCR 识别率
+function preprocessImage(dataUrl,cb){
+  try{
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var maxSide=2000; // 放大上限，提升小字清晰度
+        var scale=Math.max(1,maxSide/Math.max(img.width,img.height));
+        var w=Math.round(img.width*scale),h=Math.round(img.height*scale);
+        var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        var ctx=cv.getContext('2d');
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        var id=ctx.getImageData(0,0,w,h),d=id.data;
+        var contrast=1.7,factor=(259*(contrast+255))/(255*(259-contrast));
+        for(var i=0;i<d.length;i+=4){
+          var g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          g=factor*(g-128)+128; // 增强对比，压暗背景
+          if(g<0)g=0;else if(g>255)g=255;
+          d[i]=d[i+1]=d[i+2]=g;
+        }
+        ctx.putImageData(id,0,0);
+        cb(cv.toDataURL('image/png'));
+      }catch(e){console.error('preprocess error',e);cb(dataUrl);}
+    };
+    img.onerror=function(){cb(dataUrl);};
+    img.src=dataUrl;
+  }catch(e){cb(dataUrl);}
+}
 function tryOcr(){
   var dataUrl=window.__ocrDataUrl;if(!dataUrl)return;
   var st=document.getElementById('ocrStatus');
   var btn=document.getElementById('ocrTryBtn');
   if(typeof Tesseract==='undefined'){st.style.color='var(--blush-deep)';st.textContent='⚠️ 识别引擎未加载：请联网后重试（首次需下载中文识别包）';return;}
-  st.style.color='var(--seafoam-deep)';st.textContent='正在加载识别引擎…';
+  st.style.color='var(--seafoam-deep)';st.textContent='正在预处理图片（增强清晰度）…';
   btn.disabled=true;btn.textContent='识别中…';
-  Tesseract.recognize(dataUrl,'chi_sim',{logger:function(m){if(!m)return;if(m.status==='recognizing text'){st.textContent='识别中… '+Math.round((m.progress||0)*100)+'%';}else if(m.status&&m.status.indexOf('loading')>=0){st.textContent='正在下载中文识别包…';}}})
-    .then(function(res){
-      var text=(res&&res.data&&res.data.text)||'';
-      document.getElementById('ocrRawText').value=text;
-      btn.textContent='📷 再试一次';
-      btn.disabled=false;
-      if(!text.trim()){st.style.color='var(--yellow-deep)';st.textContent='⚠️ 识别引擎跑完了但没识别到文字（截图背景复杂/字体太小都会失败），请直接手填下方表格 ✓';return;}
-      var parsed=parseOrderText(text);
-      var hasItem=parsed.items&&parsed.items.length>0;
-      var oldRows=document.getElementById('ocrItemsTable').children.length;
-      if(parsed.supplier&&!document.getElementById('ocrSupplier').value.trim())document.getElementById('ocrSupplier').value=parsed.supplier;
-      if(hasItem){
-        // 保留用户已填的行，只在尾部追加识别出的行
-        var parsedItems=parsed.items;
-        var initialRows=oldRows;
-        if(initialRows===0){
-          renderOcrItems(parsedItems);
+  preprocessImage(dataUrl,function(processed){
+    Tesseract.recognize(processed,'chi_sim',{logger:function(m){if(!m)return;if(m.status==='recognizing text'){st.textContent='识别中… '+Math.round((m.progress||0)*100)+'%';}else if(m.status&&m.status.indexOf('loading')>=0){st.textContent='正在下载中文识别包…';}}})
+      .then(function(res){
+        var text=(res&&res.data&&res.data.text)||'';
+        document.getElementById('ocrRawText').value=text;
+        btn.textContent='📷 再试一次';
+        btn.disabled=false;
+        if(!text.trim()){st.style.color='var(--yellow-deep)';st.textContent='⚠️ 识别引擎跑完了但没识别到文字（截图背景复杂/字体太小都会失败），请直接手填下方表格 ✓';return;}
+        var parsed=parseOrderText(text);
+        var hasItem=parsed.items&&parsed.items.length>0;
+        var oldRows=document.getElementById('ocrItemsTable').children.length;
+        if(parsed.supplier&&!document.getElementById('ocrSupplier').value.trim())document.getElementById('ocrSupplier').value=parsed.supplier;
+        if(hasItem){
+          var parsedItems=parsed.items;
+          if(oldRows===0){renderOcrItems(parsedItems);}else{parsedItems.forEach(function(it){addOcrRow(it.type||'product',it);});}
+          st.style.color='var(--seafoam-deep)';st.textContent='✨ 已用图像增强识别并拆出 '+parsedItems.length+' 项，请核对（识别文字可手动修改后点「重新解析」）';
         }else{
-          parsedItems.forEach(function(it){addOcrRow(it.type||'product',it);});
+          st.style.color='var(--yellow-deep)';st.textContent='⚠️ 文字识别到了，但没能拆出商品。直接手填下方表格 ✓（或将 OCR 原文手动修正后点「重新解析」）';
         }
-        st.style.color='var(--seafoam-deep)';st.textContent='已识别出 '+parsedItems.length+' 项，请核对下方商品（识别文字可手动修改后点「重新解析」）';
-      }else{
-        st.style.color='var(--yellow-deep)';st.textContent='⚠️ 文字识别到了，但没能拆出商品。直接手填下方表格 ✓（或将 OCR 原文手动修正后点「重新解析」）';
-      }
-      document.getElementById('ocrClearBtn').style.display='inline-block';
-    })
-    .catch(function(err){console.error(err);btn.disabled=false;btn.textContent='📷 再试一次';st.style.color='var(--blush-deep)';st.textContent='⚠️ 识别失败（不影响手填，请直接在下方表格填写 ✓）';document.getElementById('ocrClearBtn').style.display='inline-block';});
+        document.getElementById('ocrClearBtn').style.display='inline-block';
+      })
+      .catch(function(err){console.error(err);btn.disabled=false;btn.textContent='📷 再试一次';st.style.color='var(--blush-deep)';st.textContent='⚠️ 识别失败（不影响手填，请直接在下方表格填写 ✓）';document.getElementById('ocrClearBtn').style.display='inline-block';});
+  });
 }
 function clearOcrText(){
   if(!confirm('清掉 OCR 识别出的文字？已手动填的行不会变'))return;
@@ -2686,7 +2711,7 @@ function clearOcrText(){
   document.getElementById('ocrClearBtn').style.display='none';
 }
 function extractQty(line){
-  var m=line.match(/(?:x|×|✕|＊|\*)\s*(\d+)/i);if(m)return parseInt(m[1],10);
+  var m=line.match(/(?:x|×|✕|＊|\*|X)\s*(\d+)/i);if(m)return parseInt(m[1],10);
   m=line.match(/数量[：:]\s*(\d+)/);if(m)return parseInt(m[1],10);
   m=line.match(/(\d+)\s*(?:件|个|套|本|张|只|条|瓶|袋|盒)/);if(m)return parseInt(m[1],10);
   return 1;
@@ -2698,7 +2723,6 @@ function parseOrderText(text){
   for(var i=0;i<lines.length&&i<12;i++){
     if(supKeys.some(function(k){return lines[i].indexOf(k)>=0})){
       var l=lines[i].split(/[：:]/)[0].replace(/[　\s]+/g,'').trim();
-      // 取「xx 公司 / xx 商行 / xx 旗舰店」这种最像店名的一段
       var m=l.match(/^([\u4e00-\u9fa5A-Za-z0-9·\.\-]{2,30}(?:有限公司|公司|商行|实业|工厂|集团|股份|专营店|旗舰店|专卖店|塑业|包装|贸易|科技|商城))/);
       if(m)supplier=m[1];else supplier=l;
       if(supplier)break;
@@ -2709,27 +2733,51 @@ function parseOrderText(text){
   var items=[];
   for(var j=0;j<lines.length;j++){
     var line=lines[j];
-    var m=line.match(/[¥￥]\s*([\d,]{1,})(?:\.(\d+))?/);
-    if(!m)continue;
+    var m=line.match(/[¥￥Y]\s*([\d,]{1,})(?:\.(\d+))?/);
+    var amt=null;
+    if(m){amt=parseFloat(m[1].replace(/,/g,'')+'.'+(m[2]||'0'));}
+    else{
+      var m2=line.match(/(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*元/);
+      if(m2&&!skip.some(function(k){return line.indexOf(k)>=0}))amt=parseFloat(m2[1].replace(/,/g,''));
+    }
+    if(amt===null||isNaN(amt))continue;
     if(skip.some(function(k){return line.indexOf(k)>=0}))continue;
-    // 跳过供应商行的价格
     if(supKeys.some(function(k){return line.indexOf(k)>=0}))continue;
-    var amt=parseFloat(m[1].replace(/,/g,'')+'.'+(m[2]||'0'));
     var qty=extractQty(line);
     var name='',spec='';
-    for(var k=j-1;k>=Math.max(0,j-8);k--){
-      if(lines[k].match(/[¥￥]/))break;
-      if(skip.some(function(sk){return lines[k].indexOf(sk)>=0}))continue;
-      if(supKeys.some(function(sk){return lines[k].indexOf(sk)>=0}))continue;
-      if(lines[k].length<3)continue;
-      name=lines[k];
-      var sm=name.match(/(?:规格|型号|尺寸|颜色|材质|版本|配置|容量|容量|袋深|丝|cm|mm|克重)[：:】]?\s*([^\s,，。；;¥]{1,30})/);
-      if(sm){spec=sm[1];name=name.replace(sm[0],'').trim();}
-      break;
+    // ① 先取价格符号之前同行的文本作为标题（处理「标题 规格 ¥价格」同一行）
+    var idx=line.search(/[¥￥Y]/);
+    if(idx>0){
+      var before=line.substring(0,idx).trim();
+      var cand=before.split(/[\s,，。；;]+/).filter(function(s){return s.length>=2});
+      if(cand.length){
+        name=cand[0];
+        var sm=name.match(/(?:规格|型号|尺寸|颜色|材质|版本|配置|容量|袋深|丝|cm|mm|克重|×|x)[\s：:】]?([^\s,，。；;¥]{1,30})/i);
+        if(sm){spec=sm[1];name=name.replace(sm[0],'').trim();}
+      }
+    }
+    // ② 同行没取到，向上查找商品标题
+    if(!name){
+      for(var k=j-1;k>=Math.max(0,j-8);k--){
+        if(lines[k].match(/[¥￥Y]/))break;
+        if(skip.some(function(sk){return lines[k].indexOf(sk)>=0}))continue;
+        if(supKeys.some(function(sk){return lines[k].indexOf(sk)>=0}))continue;
+        if(lines[k].length<2)continue;
+        name=lines[k];
+        var sm2=name.match(/(?:规格|型号|尺寸|颜色|材质|版本|配置|容量|袋深|丝|cm|mm|克重)[\s：:】]?([^\s,，。；;¥]{1,30})/);
+        if(sm2){spec=sm2[1];name=name.replace(sm2[0],'').trim();}
+        break;
+      }
+    }
+    // ③ 仍没取到，去掉价格部分把整行剩余文本当标题
+    if(!name){
+      var rest=line.replace(/[¥￥Y]\s*[\d,.]+/g,' ').replace(/元/g,'').trim();
+      var rc=rest.split(/[\s,，。；;]+/).filter(function(s){return s.length>=2});
+      if(rc.length)name=rc[0];
     }
     if(!name)continue;
-    var inferType = (/袋|盒|包装|纸|贴|标签|绳|卡|信封|气泡|填充|丝带|扎带|胶带|封口|防震|PVC|PET|塑料/).test((name+spec)) ? 'packaging' : 'product';
-    items.push({name:name.trim(),spec:spec,unitPrice:qty>0?+(amt/qty).toFixed(2):amt,qty:qty,subtotal:+(amt).toFixed(2),type:inferType});
+    var inferType=(/袋|盒|包装|纸|贴|标签|绳|卡|信封|气泡|填充|丝带|扎带|胶带|封口|防震|PVC|PET|塑料/i).test(name+spec)?'packaging':'product';
+    items.push({name:name.trim(),spec:spec,unitPrice:qty>0?+(amt/qty).toFixed(4):amt,qty:qty,subtotal:+(amt).toFixed(2),type:inferType});
   }
   return {supplier:supplier,items:items};
 }
@@ -2746,7 +2794,7 @@ function ocrRowHtml(type,it){
   return '<div class="ocr-row" style="display:flex;gap:6px;align-items:center;background:var(--cream);border-radius:10px;padding:8px">'
     +'<input class="form-input oc-name" style="flex:2;min-width:0" value="'+esc(it.name||'')+'" placeholder="商品/包材名">'
     +'<input class="form-input oc-spec" style="flex:1.2;min-width:0" value="'+esc(it.spec||'')+'" placeholder="规格">'
-    +'<input class="form-input oc-price" type="number" step="0.01" style="flex:1;min-width:0;width:72px" value="'+(it.unitPrice||'')+'" placeholder="单价">'
+    +'<input class="form-input oc-price" type="number" step="0.01" style="flex:1;min-width:0;width:72px" value="'+(it.subtotal||'')+'" placeholder="总金额">'
     +'<input class="form-input oc-qty" type="number" min="1" style="flex:0 0 50px;width:50px" value="'+(it.qty||1)+'" placeholder="数量">'
     +'<select class="form-input oc-type" style="flex:0 0 76px;width:76px;padding:6px 4px"><option value="product"'+(type==='product'?' selected':'')+'>📦产品</option><option value="packaging"'+(type==='packaging'?' selected':'')+'>🎀包材</option></select>'
     +'<button onclick="removeOcrRow(this)" style="border:none;background:none;color:var(--blush-deep);font-size:18px;cursor:pointer;flex:0 0 18px">×</button>'
@@ -2767,13 +2815,13 @@ function ensureSupplier(name){
   var s={id:uid(),name:name,status:'active',paymentCycle:''};
   state.suppliers.push(s);return s.id;
 }
-function ensureProduct(name,unitPrice,qty,supplierId){
+function ensureProduct(name,unitPrice,qty,supplierId,spec){
   var ex=state.products.find(function(p){return p.name===name});
   if(ex){addBatch(ex,qty,unitPrice,supplierId);return ex.id;}
-  var p={id:uid(),sku:genSKU(),name:name,categoryId:'',supplierId:supplierId||'',size:'',quantity:'',material:'',usage:'',cost:unitPrice,batches:[{id:uid(),qty:qty,unitCost:unitPrice,date:todayStr(),supplierId:supplierId||'',note:'OCR识别入库'}],price:0,stock:qty,safetyStock:10,status:qty>0?'active':'out_of_stock',note:'OCR 截图识别入库',image:'',image2:'',costBreakdown:{raw:0,processing:0,packaging:0,commission:0,promo:0,other:0}};
+  var p={id:uid(),sku:genSKU(),name:name,categoryId:'',supplierId:supplierId||'',size:spec||'',quantity:'',material:'',usage:'',cost:unitPrice,batches:[{id:uid(),qty:qty,unitCost:unitPrice,date:todayStr(),supplierId:supplierId||'',note:'OCR识别入库'}],price:0,stock:qty,safetyStock:10,status:qty>0?'active':'out_of_stock',note:'OCR 截图识别入库',image:'',image2:'',costBreakdown:{raw:0,processing:0,packaging:0,commission:0,promo:0,other:0}};
   state.products.push(p);return p.id;
 }
-function ensurePackaging(name,unitPrice,qty,supplierId){
+function ensurePackaging(name,unitPrice,qty,supplierId,spec){
   var pk=state.packaging.find(function(x){return x.name===name});
   if(pk){
     pk.stock=(pk.stock||0)+qty;
@@ -2781,9 +2829,10 @@ function ensurePackaging(name,unitPrice,qty,supplierId){
     pk.qty=(pk.qty||0)+qty;
     pk.unitCost=pk.qty>0?pk.totalCost/pk.qty:unitPrice;
     if(supplierId&&!pk.supplierId)pk.supplierId=supplierId;
+    if(spec&&!pk.spec)pk.spec=spec;  // 同步规格到包材列表
     return pk.id;
   }
-  var nk={id:uid(),name:name,stock:qty,totalCost:qty*unitPrice,qty:qty,unitCost:unitPrice,supplierId:supplierId||'',date:todayStr(),note:'OCR 截图入库'};
+  var nk={id:uid(),name:name,spec:spec||'',stock:qty,totalCost:qty*unitPrice,qty:qty,unitCost:unitPrice,supplierId:supplierId||'',date:todayStr(),note:'OCR 截图入库'};
   state.packaging.push(nk);
   return nk.id;
 }
@@ -2794,23 +2843,25 @@ function applyOcrResult(){
   var added=0,failed=0;
   rows.forEach(function(tr){
     var name=(tr.querySelector('.oc-name').value||'').trim();
-    var unitPrice=parseFloat(tr.querySelector('.oc-price').value)||0;
+    var totalMoney=parseFloat(tr.querySelector('.oc-price').value)||0;  // 此处填写的是该行总金额
     var qty=parseInt(tr.querySelector('.oc-qty').value,10)||0;
     var type=(tr.querySelector('.oc-type')&&tr.querySelector('.oc-type').value)||'product';
-    if(!name||unitPrice<=0||qty<=0){failed++;return;}
+    var spec=(tr.querySelector('.oc-spec')&&(tr.querySelector('.oc-spec').value||'')||'').trim();
+    if(!name||totalMoney<=0||qty<=0){failed++;return;}
+    var unitPrice=totalMoney/qty;  // 单价 = 总金额 / 数量，自动计算
     if(type==='packaging'){
-      var pkid=ensurePackaging(name,unitPrice,qty,sid);
+      var pkid=ensurePackaging(name,unitPrice,qty,sid,spec);
       state.purchases.push({id:uid(),itemType:'packaging',itemId:pkid,itemName:name,qty:qty,unitCost:unitPrice,totalCost:+(qty*unitPrice).toFixed(2),supplierId:sid,date:todayStr(),note:'截图识别入库（包材）',settled:false,updateCost:true});
     }else{
-      var pid=ensureProduct(name,unitPrice,qty,sid);
+      var pid=ensureProduct(name,unitPrice,qty,sid,spec);
       state.purchases.push({id:uid(),itemType:'product',itemId:pid,itemName:name,qty:qty,unitCost:unitPrice,totalCost:+(qty*unitPrice).toFixed(2),supplierId:sid,date:todayStr(),note:'截图识别入库',settled:false,updateCost:true});
     }
     added++;
   });
-  if(added===0){toast('没有可入库的有效行；请填名称/单价/数量');return;}
+  if(added===0){toast('没有可入库的有效行；请填名称/总金额/数量');return;}
   saveState();closeModal('ocrModal');renderPurchases();
   var msg='已入库 '+added+' 项 📦';
-  if(failed)msg+='（'+failed+' 行无效已跳过：名称/单价/数量不全）';
+  if(failed)msg+='（'+failed+' 行无效已跳过：名称/总金额/数量不全）';
   toast(msg);
 }
 
@@ -3055,13 +3106,13 @@ window.addEventListener('appinstalled',function(){localStorage.setItem('pwa_inst
         <button class="btn btn-ghost btn-sm" onclick="addOcrRow('packaging')">＋ 包材</button>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--brown-light);margin-bottom:6px">每行可修改名称/规格/单价/数量/类型，点「+产品 / +包材」添行，无误后点「确认入库」。</div>
+    <div style="font-size:11px;color:var(--brown-light);margin-bottom:6px">每行可修改名称/规格/总金额/数量/类型（单价将按数量自动算），点「+产品 / +包材」添行，无误后点「确认入库」。</div>
 
     <!-- 列头 -->
     <div style="display:flex;gap:6px;font-size:11px;color:var(--brown-light);padding:0 6px;margin-bottom:4px">
       <span style="flex:2;min-width:0">名称</span>
       <span style="flex:1.2;min-width:0">规格</span>
-      <span style="flex:1;min-width:0">单价</span>
+      <span style="flex:1;min-width:0">总金额</span>
       <span style="flex:0 0 50px;text-align:center">数量</span>
       <span style="flex:0 0 76px">类型</span>
       <span style="flex:0 0 18px"></span>
