@@ -627,7 +627,7 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
     <div id="assemblyList"></div>
   </div>
   <div id="more-purchase" style="display:none">
-    <div class="section-head"><h2>🛒 采购进货</h2><button class="btn btn-primary btn-sm" onclick="openPurchaseModal()">＋ 记一笔采购</button></div>
+    <div class="section-head"><h2>🛒 采购进货</h2><button class="btn btn-primary btn-sm" onclick="openPurchaseModal()">＋ 记一笔采购</button><button class="btn btn-ghost btn-sm" onclick="openOcrImport()">📷 截图识别入库</button></div>
     <div class="stat-grid">
       <div class="stat-box seafoam"><div class="label">采购次数</div><div class="num" id="purCount" style="font-size:18px">0</div></div>
       <div class="stat-box blue"><div class="label">本月采购额</div><div class="num" id="purMonthTotal" style="font-size:18px">¥0</div></div>
@@ -996,6 +996,7 @@ window.onerror=function(msg,url,line,col,err){
 };
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script id="mainjs">
 // ========== 图片大图查看 ==========
 function showImgLightbox(src){if(!src)return;var lb=document.getElementById('imgLightbox');document.getElementById('imgLightboxImg').src=src;lb.style.display='flex'}
@@ -2612,6 +2613,134 @@ function autoBackupIfNeeded(){
   }catch(e){/* 自动备份失败不影响正常使用 */}
 }
 function unionArr(a,b){var s=(a||[]).slice();(b||[]).forEach(function(x){if(s.indexOf(x)<0)s.push(x)});return s}
+// ========== 截图识别入库 (Tesseract.js OCR) ==========
+function openOcrImport(){
+  document.getElementById('ocrFile').value='';
+  document.getElementById('ocrPickArea').style.display='block';
+  document.getElementById('ocrPreviewWrap').style.display='none';
+  document.getElementById('ocrEditArea').style.display='none';
+  document.getElementById('ocrRawText').value='';
+  document.getElementById('ocrSupplier').value='';
+  document.getElementById('ocrItemsTable').innerHTML='';
+  document.getElementById('ocrModal').classList.add('show');
+}
+function onOcrFile(input){
+  var file=input.files&&input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var dataUrl=e.target.result;
+    document.getElementById('ocrPreview').src=dataUrl;
+    document.getElementById('ocrPickArea').style.display='none';
+    document.getElementById('ocrPreviewWrap').style.display='block';
+    document.getElementById('ocrEditArea').style.display='none';
+    runOCR(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+function runOCR(dataUrl){
+  var st=document.getElementById('ocrStatus');
+  if(typeof Tesseract==='undefined'){st.style.color='var(--blush-deep)';st.textContent='⚠️ 识别引擎未加载：请联网后重试（首次需下载中文识别包）';return;}
+  st.style.color='var(--seafoam-deep)';st.textContent='正在加载识别引擎…';
+  Tesseract.recognize(dataUrl,'chi_sim',{logger:function(m){if(!m)return;if(m.status==='recognizing text'){st.textContent='识别中… '+Math.round((m.progress||0)*100)+'%';}else if(m.status&&m.status.indexOf('loading')>=0){st.textContent='正在下载中文识别包…';}}})
+    .then(function(res){
+      var text=(res&&res.data&&res.data.text)||'';
+      document.getElementById('ocrRawText').value=text;
+      var parsed=parseOrderText(text);
+      document.getElementById('ocrSupplier').value=parsed.supplier||'';
+      renderOcrItems(parsed.items);
+      document.getElementById('ocrEditArea').style.display='block';
+      st.textContent='识别完成，请核对下方商品信息';
+    })
+    .catch(function(err){console.error(err);st.style.color='var(--blush-deep)';st.textContent='识别失败，可手动在上方文本框填写后点「重新智能解析」';});
+}
+function extractQty(line){
+  var m=line.match(/(?:x|×|✕|＊|\*)\s*(\d+)/i);if(m)return parseInt(m[1],10);
+  m=line.match(/数量[：:]\s*(\d+)/);if(m)return parseInt(m[1],10);
+  m=line.match(/(\d+)\s*(?:件|个|套|本|张|只|条|瓶|袋|盒)/);if(m)return parseInt(m[1],10);
+  return 1;
+}
+function parseOrderText(text){
+  var lines=(text||'').split(/[\n\r]+/).map(function(l){return l.trim()}).filter(Boolean);
+  var supKeys=['店铺','卖家','店','旗舰','企业店','专卖店','工作室','商行','供应商','商铺','官方'];
+  var supplier='';
+  for(var i=0;i<lines.length;i++){
+    if(supKeys.some(function(k){return lines[i].indexOf(k)>=0})){
+      supplier=lines[i].split(/[：:]/)[0].replace(/[店铺卖家店旗舰企业店专卖店工作室商行供应商商铺官方]/g,'').trim();
+      if(supplier)break;
+    }
+  }
+  if(!supplier&&lines.length)supplier=lines[0];
+  var skip=['运费','邮费','优惠','红包','合计','总额','实付','总价','积分','赠','垫付','补贴','税费','关税','定金'];
+  var items=[];
+  for(var j=0;j<lines.length;j++){
+    var line=lines[j];
+    var m=line.match(/[¥￥]\s*([\d,]{1,})(?:\.(\d+))?/);
+    if(!m)continue;
+    if(skip.some(function(k){return line.indexOf(k)>=0}))continue;
+    var amt=parseFloat(m[1].replace(/,/g,'')+'.'+(m[2]||'0'));
+    var qty=extractQty(line);
+    var name='',spec='';
+    for(var k=j-1;k>=0;k--){
+      if(lines[k].match(/[¥￥]/))break;
+      if(skip.some(function(sk){return lines[k].indexOf(sk)>=0}))continue;
+      if(supKeys.some(function(sk){return lines[k].indexOf(sk)>=0}))continue;
+      name=lines[k];
+      var sm=name.match(/(?:规格|尺寸|颜色|型号|版本|配置|材质)[：:】]?\s*([^\s,，。；;]+)/);
+      if(sm){spec=sm[1];name=name.replace(sm[0],'').trim();}
+      break;
+    }
+    if(!name)continue;
+    items.push({name:name.trim(),spec:spec,unitPrice:qty>0?+(amt/qty).toFixed(2):amt,qty:qty,subtotal:+(amt).toFixed(2)});
+  }
+  return {supplier:supplier,items:items};
+}
+function renderOcrItems(items){
+  var box=document.getElementById('ocrItemsTable');
+  var arr=items||[];
+  if(arr.length===0){box.innerHTML='<div style="font-size:12px;color:var(--brown-light);text-align:center;padding:8px">未识别出商品，可在上方文本框修正文字后点「重新智能解析」，或手动「＋ 加一行」</div>';return;}
+  box.innerHTML=arr.map(function(it,i){
+    return '<div class="ocr-row" data-i="'+i+'" style="display:flex;gap:6px;align-items:center;background:var(--cream);border-radius:10px;padding:8px">'
+      +'<input class="form-input oc-name" style="flex:2;min-width:0" value="'+esc(it.name||'')+'" placeholder="商品名">'
+      +'<input class="form-input oc-spec" style="flex:1;min-width:0" value="'+esc(it.spec||'')+'" placeholder="规格">'
+      +'<input class="form-input oc-price" type="number" step="0.01" style="flex:1;min-width:0;width:64px" value="'+(it.unitPrice||0)+'" placeholder="单价">'
+      +'<input class="form-input oc-qty" type="number" min="1" style="flex:0 0 54px;width:54px" value="'+(it.qty||1)+'" placeholder="数量">'
+      +'<button onclick="removeOcrRow(this)" style="border:none;background:none;color:var(--blush-deep);font-size:18px;cursor:pointer">×</button>'
+      +'</div>';
+  }).join('');
+}
+function addOcrRow(){var box=document.getElementById('ocrItemsTable');var d=document.createElement('div');d.className='ocr-row';d.style.cssText='display:flex;gap:6px;align-items:center;background:var(--cream);border-radius:10px;padding:8px';d.innerHTML='<input class="form-input oc-name" style="flex:2;min-width:0" placeholder="商品名"><input class="form-input oc-spec" style="flex:1;min-width:0" placeholder="规格"><input class="form-input oc-price" type="number" step="0.01" style="flex:1;min-width:0;width:64px" placeholder="单价"><input class="form-input oc-qty" type="number" min="1" style="flex:0 0 54px;width:54px" value="1" placeholder="数量"><button onclick="removeOcrRow(this)" style="border:none;background:none;color:var(--blush-deep);font-size:18px;cursor:pointer">×</button>';box.appendChild(d);}
+function removeOcrRow(btn){var r=btn.parentNode;if(r&&r.parentNode)r.parentNode.removeChild(r);}
+function ocrReparse(){var t=document.getElementById('ocrRawText').value;var p=parseOrderText(t);if(p.supplier)document.getElementById('ocrSupplier').value=p.supplier;renderOcrItems(p.items);toast('已重新解析');}
+function ensureSupplier(name){
+  var ex=state.suppliers.find(function(s){return s.name===name});
+  if(ex)return ex.id;
+  var s={id:uid(),name:name,status:'active',paymentCycle:''};
+  state.suppliers.push(s);return s.id;
+}
+function ensureProduct(name,unitPrice,qty,supplierId){
+  var ex=state.products.find(function(p){return p.name===name});
+  if(ex){addBatch(ex,qty,unitPrice,supplierId);return ex.id;}
+  var p={id:uid(),sku:genSKU(),name:name,categoryId:'',supplierId:supplierId||'',size:'',quantity:'',material:'',usage:'',cost:unitPrice,batches:[{id:uid(),qty:qty,unitCost:unitPrice,date:todayStr(),supplierId:supplierId||'',note:'OCR识别入库'}],price:0,stock:qty,safetyStock:10,status:qty>0?'active':'out_of_stock',note:'OCR 截图识别入库',image:'',image2:'',costBreakdown:{raw:0,processing:0,packaging:0,commission:0,promo:0,other:0}};
+  state.products.push(p);return p.id;
+}
+function applyOcrResult(){
+  var supplierName=(document.getElementById('ocrSupplier').value||'').trim();
+  var sid=supplierName?ensureSupplier(supplierName):'';
+  var rows=document.querySelectorAll('#ocrItemsTable .ocr-row');
+  var added=0,failed=0;
+  rows.forEach(function(tr){
+    var name=(tr.querySelector('.oc-name').value||'').trim();
+    var unitPrice=parseFloat(tr.querySelector('.oc-price').value)||0;
+    var qty=parseInt(tr.querySelector('.oc-qty').value,10)||0;
+    if(!name||unitPrice<=0||qty<=0){failed++;return;}
+    var pid=ensureProduct(name,unitPrice,qty,sid);
+    state.purchases.push({id:uid(),itemType:'product',itemId:pid,itemName:name,qty:qty,unitCost:unitPrice,totalCost:+(qty*unitPrice).toFixed(2),supplierId:sid,date:todayStr(),note:'截图识别入库',settled:false,updateCost:true});
+    added++;
+  });
+  if(added===0){toast('没有可入库的有效商品');return;}
+  saveState();closeModal('ocrModal');renderPurchases();toast('已入库 '+added+' 项 📦'+(failed?('，'+failed+' 行无效已跳过'):''));
+}
+
 function startImportWizard(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
@@ -2813,6 +2942,34 @@ window.addEventListener('appinstalled',function(){localStorage.setItem('pwa_inst
   <div style="display:flex;gap:8px">
     <button class="btn btn-ghost btn-block" onclick="closeModal('importWizard')">取消</button>
     <button class="btn btn-primary btn-block" onclick="doImportMerge()">✅ 确认合并</button>
+  </div>
+</div></div>
+
+<div class="modal-mask" id="ocrModal"><div class="modal" style="max-width:560px;max-height:88vh;overflow:auto">
+  <div class="modal-header"><h2>📷 截图识别入库</h2><button class="modal-close" onclick="closeModal('ocrModal')">×</button></div>
+  <p style="font-size:11px;color:var(--brown-light);margin:-4px 0 10px">上传淘宝 / 阿里巴巴 / 闲鱼等订单截图，自动识别供应商与商品，确认后即可一键入库。</p>
+  <div id="ocrPickArea" style="border:2px dashed var(--cream-deep);border-radius:14px;padding:18px;text-align:center;cursor:pointer" onclick="document.getElementById('ocrFile').click()">
+    <div style="font-size:34px">🖼️</div>
+    <div style="font-size:13px;margin-top:6px">点击选择订单截图</div>
+    <div style="font-size:11px;color:var(--brown-light);margin-top:4px">支持手机相册或文件，识别在本地完成（首次需联网下载中文识别包）</div>
+  </div>
+  <input type="file" id="ocrFile" accept="image/*" style="display:none" onchange="onOcrFile(this)">
+  <div id="ocrPreviewWrap" style="display:none;margin-top:10px">
+    <img id="ocrPreview" style="width:100%;border-radius:10px;max-height:200px;object-fit:contain;background:#000">
+    <div id="ocrStatus" style="font-size:12px;color:var(--seafoam-deep);margin:8px 0;text-align:center">识别中…</div>
+  </div>
+  <div id="ocrEditArea" style="display:none">
+    <div class="form-group"><label class="form-label">供应商 / 店铺名</label><input class="form-input" id="ocrSupplier" placeholder="自动识别或手动填写"></div>
+    <div class="form-group"><label class="form-label">OCR 识别文字（可手动修正错别字）</label><textarea class="form-textarea" id="ocrRawText" rows="4" style="font-size:12px"></textarea></div>
+    <button class="btn btn-ghost btn-sm btn-block" onclick="ocrReparse()" style="margin-bottom:10px">🔄 重新智能解析</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:600">📦 识别到的商品</span><button class="btn btn-ghost btn-sm" onclick="addOcrRow()">＋ 加一行</button></div>
+    <div style="font-size:11px;color:var(--brown-light);margin-bottom:6px">单价 / 数量可直接修改，无误后点「确认入库」。</div>
+    <div id="ocrItemsTable" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div style="height:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-block" onclick="closeModal('ocrModal')">取消</button>
+      <button class="btn btn-primary btn-block" onclick="applyOcrResult()">✅ 确认入库</button>
+    </div>
   </div>
 </div></div>
 
