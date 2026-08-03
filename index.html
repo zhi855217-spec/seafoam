@@ -379,6 +379,7 @@ input::placeholder,textarea::placeholder{color:var(--brown-light)}
     Seafoam
   </h1>
   <span class="date" id="todayDate"></span>
+  <span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:6px" id="appVersion"></span>
 </header>
 
 <!-- ====== 首页：经营驾驶舱 ====== -->
@@ -2312,13 +2313,26 @@ function renderBundles(){
   document.getElementById('bdlActive').textContent=bs.filter(function(b){return getBundleStatus(b)==='active'}).length;
   document.getElementById('bdlOos').textContent=bs.filter(function(b){return getBundleStatus(b)!=='active'}).length;
   if(bs.length===0){list.innerHTML='<div class="empty"><span class="emoji">🎁</span>还没有套组<br>点击右下角＋创建</div>';return}
-  list.innerHTML=bs.map(function(b){
-    var avail=getBundleAvailStock(b),cost=getBundleCost(b);
-    var st=avail<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'<span class="status-badge status-active">在售</span>';
-    var im=b.image?'<img src="'+b.image+'" onclick="event.stopPropagation();showImgLightbox(\''+b.image+'\')">':'<span class="placeholder">🎁</span>';
-    var itemsHtml=bItems(b).map(function(it){var warn=it.productDeleted?'⚠️':'';return '<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+warn+esc(it.productName)+'x'+it.quantity+'</span>'}).join('');if(!itemsHtml)itemsHtml='<span style="font-size:10px;color:var(--yellow-deep)">⚠️ 无内容(需编辑补充)</span>';
-    return '<div class="product-card" onclick="editBundle(\''+b.id+'\')"><div class="product-img">'+im+'</div><div class="product-info"><div class="name">🎁 '+esc(b.name)+' '+st+'<span class="sku-text">'+esc(b.sku||'')+'</span></div><div style="margin:2px 0">'+itemsHtml+'</div><div class="price-row"><span class="cost">成本¥'+cost.toFixed(2)+'</span><span class="sell">¥'+(b.price||0).toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">可售'+avail+'套</span></div></div></div>';
-  }).join('');
+  var cards=[];
+  bs.forEach(function(b){
+    try{
+      var avail=getBundleAvailStock(b),cost=getBundleCost(b);
+      var st=avail<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'<span class="status-badge status-active">在售</span>';
+      var im=b.image?'<img src="'+b.image+'" onclick="event.stopPropagation();showImgLightbox(\''+b.image+'\')" style="width:100%;height:140px;object-fit:cover;border-radius:10px">':'<span class="placeholder" style="width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--cream)">🎁</span>';
+      var itemsHtml=bItems(b).map(function(it){var warn=it.productDeleted?'⚠️':'';return '<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+warn+esc(it.productName)+'x'+it.quantity+'</span>'}).join('');
+      if(!itemsHtml)itemsHtml='<span style="font-size:10px;color:var(--yellow-deep)">⚠️ 无内容(需编辑补充)</span>';
+      var name=esc(b.name||'未命名套组');
+      var sku=esc(b.sku||'');
+      var price=isNaN(b.price)?0:Number(b.price);
+      var costVal=isNaN(cost)?0:Number(cost);
+      var availNum=isNaN(avail)?0:Number(avail);
+      cards.push('<div class="product-card" onclick="editBundle(\''+b.id+'\')"><div class="product-img">'+im+'</div><div class="product-info"><div class="name">🎁 '+name+' '+st+'<span class="sku-text">'+sku+'</span></div><div style="margin:2px 0">'+itemsHtml+'</div><div class="price-row"><span class="cost">成本¥'+costVal.toFixed(2)+'</span><span class="sell">¥'+price.toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">可售'+availNum+'套</span></div></div></div>');
+    }catch(e){
+      cards.push('<div class="card" style="border:2px dashed var(--blush-deep);padding:12px;background:var(--blush-light);border-radius:12px;margin-bottom:10px"><div style="font-weight:600;color:var(--blush-deep);font-size:13px">⚠️ 套组渲染异常：'+esc(b.name||'未命名')+'</div><div style="font-size:11px;color:var(--brown-soft);margin-top:4px;word-break:break-all">'+esc(e.message||String(e))+'</div><button class="btn btn-sm btn-primary" style="margin-top:6px" onclick="editBundle(\''+b.id+'\')">尝试编辑</button></div>');
+      console.error('[renderBundles] 套组渲染出错:',b.id,b.name,e);
+    }
+  });
+  list.innerHTML=cards.join('')||'<div class="empty"><span class="emoji">⚠️</span>渲染异常<br>请刷新重试</div>';
 }
 var tempBundleItems=[];
 function openBundleModal(id){
@@ -2966,7 +2980,7 @@ function closeModal(id){document.getElementById(id).classList.remove('show')}
 document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show')})});
 
 // ========== 日期初始化 ==========
-(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
+(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var v=document.getElementById('appVersion');if(v)v.textContent='v7.4';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
 
 // ========== 初始化（先锁屏，解锁后加载） ==========
 function loadApp(){
