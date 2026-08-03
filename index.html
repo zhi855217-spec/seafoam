@@ -1141,7 +1141,7 @@ function migrateData(){
   state.purchases.forEach(function(p){if(!p.supplierId)p.supplierId='';if(!p.note)p.note='';if(!p.itemType)p.itemType='product'});
   if(!state.bundles)state.bundles=[];
   if(!state.settings.bundleSkuCounter)state.settings.bundleSkuCounter=state.bundles.length;
-  state.bundles.forEach(function(b,i){if(!b.sku)b.sku='BF-'+String(i+1).padStart(4,'0');if(!b.status)b.status='active';if(b.safetyStock===undefined)b.safetyStock=3;if(!b.items)b.items=[];if(!b.createdAt)b.createdAt=todayStr()});
+  state.bundles.forEach(function(b,i){if(!b)return;if(!b.sku)b.sku='BF-'+String(i+1).padStart(4,'0');if(!b.status)b.status='active';if(b.safetyStock===undefined)b.safetyStock=3;if(!Array.isArray(b.items))b.items=[];if(!b.createdAt)b.createdAt=todayStr()});
   state.sales.forEach(function(s){if(!s.itemType)s.itemType='product';if(!s.bundleId)s.bundleId='';if(!s.bundleName)s.bundleName=''});
   // v5 迁移：批次成本 / 回收站 / 采购结算 / 新设置
   if(!state.trash)state.trash=[];
@@ -1751,7 +1751,7 @@ function onSaleProductChange(){
     var b=state.bundles.find(function(x){return x.id===id});if(!b)return;
     if(!document.getElementById('salePrice').value)document.getElementById('salePrice').value=b.price||0;
     var avail=getBundleAvailStock(b),cost=getBundleCost(b);
-    var itemsStr=b.items.map(function(it){return esc(it.productName)+'x'+it.quantity}).join(' + ');
+    var itemsStr=bItems(b).map(function(it){return esc(it.productName)+'x'+it.quantity}).join(' + ');
     info.innerHTML='<div class="calc-product-pick">'+(b.image?'<img src="'+b.image+'">':'<div style="width:44px;height:44px;border-radius:8px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center">🎁</div>')+'<div class="cp-name">🎁 '+esc(b.name)+'<div class="cp-cost">'+itemsStr+'<br>成本¥'+cost.toFixed(2)+' · 可售'+avail+'套</div></div></div>';
   } else {
     var p=state.products.find(function(x){return x.id===id});if(!p)return;
@@ -1802,7 +1802,7 @@ function saveSale(){
     }
     if(avail<q){if(!confirm('可售仅剩'+avail+'套，不足'+q+'套。仍要记录？'))return}
     b.items.forEach(function(it){var p=state.products.find(function(x){return x.id===it.productId});if(p){deductBatches(p,it.quantity*q);if(p.stock<=0)p.status='out_of_stock';else if(p.status==='out_of_stock')p.status='active'}});
-    var bdata={id:id||uid(),itemType:'bundle',productId:'',bundleId:pid,bundleName:b.name,quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:cost*q,platform:plat,buyer:buyer,components:b.items.map(function(it){return {productId:it.productId,quantity:(it.quantity||0)*q}})};
+    var bdata={id:id||uid(),itemType:'bundle',productId:'',bundleId:pid,bundleName:b.name,quantity:q,price:pr,date:dt,note:nt,revenue:rev,profit:prof,cost:cost*q,platform:plat,buyer:buyer,components:bItems(b).map(function(it){return {productId:it.productId,quantity:(it.quantity||0)*q}})};
     if(isEdit){var bidx=state.sales.findIndex(function(x){return x.id===id});if(bidx>=0)state.sales[bidx]=bdata}else state.sales.push(bdata);
     saveState();closeModal('saleModal');toast('套组销售已记录~ 🎁 库存已更新');renderSales();return;
   }
@@ -2282,10 +2282,11 @@ function deletePurchase(){
 }
 
 // ========== 组合套组 ==========
+function bItems(b){return (b&&Array.isArray(b.items))?b.items:[]}
 function getBundleAvailStock(b){
-  if(!b||!b.items||b.items.length===0)return 0;
+  var its=bItems(b);if(its.length===0)return 0;
   var min=Infinity;
-  b.items.forEach(function(it){
+  its.forEach(function(it){
     if(it.productDeleted){min=0;return}
     var p=state.products.find(function(x){return x.id===it.productId});
     var stock=p?(p.stock||0):0;
@@ -2295,8 +2296,8 @@ function getBundleAvailStock(b){
   return min===Infinity?0:min;
 }
 function getBundleCost(b){
-  if(!b||!b.items||b.items.length===0)return 0;
-  return b.items.reduce(function(s,it){
+  var its=bItems(b);if(its.length===0)return 0;
+  return its.reduce(function(s,it){
     if(it.productDeleted)return s+(it.unitCost||0)*(it.quantity||0);
     var p=state.products.find(function(x){return x.id===it.productId});
     var cost=p?getAvgCost(p):(it.unitCost||0);
@@ -2315,7 +2316,7 @@ function renderBundles(){
     var avail=getBundleAvailStock(b),cost=getBundleCost(b);
     var st=avail<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'<span class="status-badge status-active">在售</span>';
     var im=b.image?'<img src="'+b.image+'" onclick="event.stopPropagation();showImgLightbox(\''+b.image+'\')">':'<span class="placeholder">🎁</span>';
-    var itemsHtml=b.items.map(function(it){var warn=it.productDeleted?'⚠️':'';return '<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+warn+esc(it.productName)+'x'+it.quantity+'</span>'}).join('');
+    var itemsHtml=bItems(b).map(function(it){var warn=it.productDeleted?'⚠️':'';return '<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+warn+esc(it.productName)+'x'+it.quantity+'</span>'}).join('');if(!itemsHtml)itemsHtml='<span style="font-size:10px;color:var(--yellow-deep)">⚠️ 无内容(需编辑补充)</span>';
     return '<div class="product-card" onclick="editBundle(\''+b.id+'\')"><div class="product-img">'+im+'</div><div class="product-info"><div class="name">🎁 '+esc(b.name)+' '+st+'<span class="sku-text">'+esc(b.sku||'')+'</span></div><div style="margin:2px 0">'+itemsHtml+'</div><div class="price-row"><span class="cost">成本¥'+cost.toFixed(2)+'</span><span class="sell">¥'+(b.price||0).toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">可售'+avail+'套</span></div></div></div>';
   }).join('');
 }
@@ -2335,7 +2336,7 @@ function openBundleModal(id){
   document.getElementById('bdlSafetyStock').value=b?b.safetyStock:3;
   document.getElementById('bdlNote').value=b?b.note:'';
   document.getElementById('bdlDeleteBox').style.display=id?'block':'none';
-  tempBundleItems=b?b.items.map(function(it){return JSON.parse(JSON.stringify(it))}):[];
+  tempBundleItems=b?bItems(b).map(function(it){return JSON.parse(JSON.stringify(it))}):[];
   renderBundleItems();
   document.getElementById('bundleModal').classList.add('show');
 }
