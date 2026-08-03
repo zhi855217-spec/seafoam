@@ -2315,7 +2315,7 @@ function renderBundles(){
   if(bs.length===0){list.innerHTML='<div class="empty"><span class="emoji">🎁</span>还没有套组<br>点击右下角＋创建</div>';return}
   var h="";
   h+='<div style="background:#fff3cd;border:1px solid #ffc107;padding:8px;border-radius:8px;margin-bottom:8px;font-size:11px;color:#856404;word-break:break-all">';
-  h+="<b>🔍 诊断 [v7.7] 套组总数="+bs.length+"</b>";
+  h+="<b>🔍 诊断 [v7.8] 套组总数="+bs.length+"</b>";
   bs.forEach(function(b,i){
     var itype=Array.isArray(b.items)?"array["+b.items.length+"]":typeof b.items;
     h+="<br>"+i+") id="+String(b.id).slice(0,12)+" name="+(b.name||"(空)")+" items="+itype+" price="+(b.price||0)+" status="+(b.status||"?");
@@ -2325,13 +2325,14 @@ function renderBundles(){
     try{
       var avail=getBundleAvailStock(b),cost=getBundleCost(b);
       var st=avail<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'<span class="status-badge status-active">在售</span>';
-      var im=b.image?'<img src="'+esc(b.image)+'" style="width:100%;height:140px;object-fit:cover;border-radius:10px;cursor:pointer" onclick="event.stopPropagation()">':'<span style="width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--cream-deep)">🎁</span>';
+      var im=b.image?'<img src="'+esc(b.image)+'" style="width:100%;height:120px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="event.stopPropagation()">':'<span style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:28px;background:linear-gradient(135deg,#e8faf6,#f0f8ff)">🎁</span>';
       var items=bItems(b);var tags="";
       if(items.length>0){items.forEach(function(it){tags+='<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+(it.productDeleted?"⚠️":"")+esc(it.productName)+"x"+it.quantity+'</span>'});}else{tags='<span style="font-size:10px;color:var(--yellow-deep)">⚠️ 无内容(需编辑补充)</span>';}
       var nm=esc(b.name||"未命名套组");var pr=isNaN(b.price)?0:Number(b.price);var cv=isNaN(cost)?0:Number(cost);var av=isNaN(avail)?0:Number(avail);var bid=String(b.id||"");
-      h+='<div class="product-card" data-bid="'+bid+'" style="cursor:pointer;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:10px">';
-      h+='<div style="width:100%;aspect-ratio:1;background:var(--cream-deep);display:flex;align-items:center;justify-content:center">'+im+'</div>';
-      h+='<div style="padding:10px"><div style="font-size:13px;font-weight:600;color:var(--brown)">🎁 '+nm+' '+st+'</div><div style="margin:4px 0">'+tags+'</div>';
+      h+='<div class="product-card" data-bid="'+bid+'" style="cursor:pointer;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:10px;border:1.5px solid #b8e8de">';
+      h+='<div style="padding:10px 10px 6px"><div style="font-size:14px;font-weight:700;color:var(--brown)">🎁 '+nm+' '+st+'</div></div>';
+      h+='<div style="padding:0 10px">'+im+'</div>';
+      h+='<div style="padding:8px 10px 10px"><div style="margin:4px 0">'+tags+'</div>';
       h+='<div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--brown-soft)">成本¥'+cv.toFixed(2)+'</span><span style="font-size:13px;font-weight:700;color:var(--seafoam-deep)">¥'+pr.toFixed(2)+'</span></div>';
       h+='<div style="margin-top:4px;font-size:10px;color:var(--brown-soft);font-weight:600">可售'+av+'套</div></div></div>';
     }catch(e){
@@ -2987,7 +2988,7 @@ function closeModal(id){document.getElementById(id).classList.remove('show')}
 document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show')})});
 
 // ========== 日期初始化 ==========
-(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var v=document.getElementById('appVersion');if(v)v.textContent='v7.7';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
+(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var v=document.getElementById('appVersion');if(v)v.textContent='v7.8';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
 
 // ========== 初始化（先锁屏，解锁后加载） ==========
 function loadApp(){
