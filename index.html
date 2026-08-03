@@ -2313,12 +2313,22 @@ function renderBundles(){
   document.getElementById('bdlActive').textContent=bs.filter(function(b){return getBundleStatus(b)==='active'}).length;
   document.getElementById('bdlOos').textContent=bs.filter(function(b){return getBundleStatus(b)!=='active'}).length;
   if(bs.length===0){list.innerHTML='<div class="empty"><span class="emoji">🎁</span>还没有套组<br>点击右下角＋创建</div>';return}
+  // ===== 诊断：直接写入原始数据到 DOM（手机可见） =====
+  var diag=[];
+  diag.push('<div style="background:#fff3cd;border:1px solid #ffc107;padding:8px;border-radius:8px;margin-bottom:8px;font-size:11px;color:#856404">');
+  diag.push('<b>🔍 诊断 [v7.4]</b> 套组总数='+bs.length);
+  bs.forEach(function(b,i){
+    var itype=Array.isArray(b.items)?'array['+b.items.length+']':typeof b.items;
+    diag.push('<br>'+i+') id='+String(b.id).slice(0,12)+' name='+(b.name||'(空)')+' items='+itype+' price='+(b.price||0)+' status='+(b.status||'?'));
+  });
+  diag.push('</div>');
+  // ===== 卡片渲染（逐张 try/catch） =====
   var cards=[];
-  bs.forEach(function(b){
+  bs.forEach(function(b,idx){
     try{
       var avail=getBundleAvailStock(b),cost=getBundleCost(b);
       var st=avail<=0?'<span class="status-badge status-out_of_stock">缺货</span>':'<span class="status-badge status-active">在售</span>';
-      var im=b.image?'<img src="'+b.image+'" onclick="event.stopPropagation();showImgLightbox(\''+b.image+'\')" style="width:100%;height:140px;object-fit:cover;border-radius:10px">':'<span class="placeholder" style="width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--cream)">🎁</span>';
+      var im=b.image?'<img src="'+esc(b.image)+'" style="width:100%;height:140px;object-fit:cover;border-radius:10px;cursor:pointer" onclick="event.stopPropagation()">':'<span style="width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--cream)">🎁</span>';
       var itemsHtml=bItems(b).map(function(it){var warn=it.productDeleted?'⚠️':'';return '<span style="font-size:10px;background:var(--cream);padding:2px 6px;border-radius:4px;margin:1px;display:inline-block">'+warn+esc(it.productName)+'x'+it.quantity+'</span>'}).join('');
       if(!itemsHtml)itemsHtml='<span style="font-size:10px;color:var(--yellow-deep)">⚠️ 无内容(需编辑补充)</span>';
       var name=esc(b.name||'未命名套组');
@@ -2326,13 +2336,21 @@ function renderBundles(){
       var price=isNaN(b.price)?0:Number(b.price);
       var costVal=isNaN(cost)?0:Number(cost);
       var availNum=isNaN(avail)?0:Number(avail);
-      cards.push('<div class="product-card" onclick="editBundle(\''+b.id+'\')"><div class="product-img">'+im+'</div><div class="product-info"><div class="name">🎁 '+name+' '+st+'<span class="sku-text">'+sku+'</span></div><div style="margin:2px 0">'+itemsHtml+'</div><div class="price-row"><span class="cost">成本¥'+costVal.toFixed(2)+'</span><span class="sell">¥'+price.toFixed(2)+'</span></div><div class="price-row" style="margin-top:3px"><span class="stock">可售'+availNum+'套</span></div></div></div>');
+      var safeId=String(b.id||'').replace(/[^a-zA-Z0-9_-]/g,'');
+      var cardHtml='<div class="product-card" data-bid="'+safeId+'" style="cursor:pointer;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:10px"><div style="width:100%;aspect-ratio:1;background:var(--cream-deep);display:flex;align-items:center;justify-content:center">'+im+'</div><div style="padding:10px"><div style="font-size:13px;font-weight:600;color:var(--brown)">🎁 '+name+' '+st+'</div><div style="margin:4px 0">'+itemsHtml+'</div><div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--brown-soft)">成本¥'+costVal.toFixed(2)+'</span><span style="font-size:13px;font-weight:700;color:var(--seafoam-deep)">¥'+price.toFixed(2)+'</span></div><div style="margin-top:4px;font-size:10px;color:var(--brown-soft);font-weight:600">可售'+availNum+'套</div></div></div>';
+      cards.push(cardHtml);
     }catch(e){
-      cards.push('<div class="card" style="border:2px dashed var(--blush-deep);padding:12px;background:var(--blush-light);border-radius:12px;margin-bottom:10px"><div style="font-weight:600;color:var(--blush-deep);font-size:13px">⚠️ 套组渲染异常：'+esc(b.name||'未命名')+'</div><div style="font-size:11px;color:var(--brown-soft);margin-top:4px;word-break:break-all">'+esc(e.message||String(e))+'</div><button class="btn btn-sm btn-primary" style="margin-top:6px" onclick="editBundle(\''+b.id+'\')">尝试编辑</button></div>');
-      console.error('[renderBundles] 套组渲染出错:',b.id,b.name,e);
+      cards.push('<div style="border:2px dashed #e74c3c;padding:12px;background:#fdedec;border-radius:12px;margin-bottom:10px"><div style="font-weight:600;color:#e74c3c;font-size:13px">⚠️ 套组#'+idx+' 渲染异常：'+esc(b.name||'未命名')+'</div><div style="font-size:11px;color:#666;margin-top:4px;word-break:break-all">'+esc(e.message||String(e))+'</div><button style="margin-top:6px;padding:6px 14px;background:#e74c3c;color:#fff;border:none;border-radius:8px;font-size:12px" onclick="editBundle(\''+String(b.id||'').replace(/'/g,'')+'\')">尝试编辑</button></div>');
     }
   });
-  list.innerHTML=cards.join('')||'<div class="empty"><span class="emoji">⚠️</span>渲染异常<br>请刷新重试</div>';
+  // 先写诊断 + 再写卡片
+  var finalHtml=diag.join('')+cards.join('');
+  if(!finalHtml.trim())finalHtml='<div style="padding:20px;text-align:center;color:#e74c3c">⚠️ 未生成任何内容（cards空且无异常）<br><small style="color:#999">请截图此信息给开发者</small></div>';
+  list.innerHTML=finalHtml;
+  // 事件委托：点击卡片打开编辑（避免 onclick 属性注入问题）
+  list.querySelectorAll('[data-bid]').forEach(function(el){
+    el.addEventListener('click',function(){editBundle(this.getAttribute('data-bid'));});
+  });
 }
 var tempBundleItems=[];
 function openBundleModal(id){
@@ -2980,7 +2998,7 @@ function closeModal(id){document.getElementById(id).classList.remove('show')}
 document.querySelectorAll('.modal-mask').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show')})});
 
 // ========== 日期初始化 ==========
-(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var v=document.getElementById('appVersion');if(v)v.textContent='v7.4';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
+(function(){var d=new Date();document.getElementById('todayDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日';var v=document.getElementById('appVersion');if(v)v.textContent='v7.5';var e1=document.getElementById('expDate');if(e1)e1.value=todayStr();var e2=document.getElementById('commDate');if(e2)e2.value=todayStr();var e3=document.getElementById('saleDate');if(e3)e3.value=todayStr()})();
 
 // ========== 初始化（先锁屏，解锁后加载） ==========
 function loadApp(){
