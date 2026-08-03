@@ -1,4 +1,4 @@
-var CACHE_NAME='seafoam-v13';
+var CACHE_NAME='seafoam-v14';
 var ASSETS=['app.html','manifest.json','icon-192.png','icon-512.png','apple-touch-icon.png','favicon-32.png','icon-maskable-512.png'];
 
 self.addEventListener('install',function(e){
